@@ -62,33 +62,14 @@ O projeto foi criado para resolver um problema que eu encontrava constantemente 
 
 Este projeto utiliza a API pública:
 
-- :contentReference[oaicite:0]{index=0}
+- pokeapi.co
 
 As Pokédex regionais e exclusividades de versão são organizadas manualmente para reproduzir com maior fidelidade a experiência dos jogos.
 
 ---
 
-## 🚀 Objetivos Futuros
-
-- [ ] Lista completa de golpes por jogo.
-- [ ] Compatibilidade de TM/HM por geração.
-- [ ] Sugestão automática de equipes.
-- [ ] Comparação de cobertura de tipos.
-- [ ] Exportação e importação de times.
-- [ ] Sistema de favoritos.
-- [ ] Modo Nuzlocke.
-- [ ] Rastreador de Pokédex.
-
----
-
-## 📸 Preview
-
-Em desenvolvimento.
-
----
-
 ## 💡 Motivação
 
-Existem diversas ferramentas excelentes para Pokémon, mas poucas focam na disponibilidade real dos Pokémon dentro de cada jogo e na organização por Pokédex regional.
+Existem diversas ferramentas excelentes para Pokémon, porém nenhuma (que eu conheça) une de forma proveitosa a montagem de time simplificada com a montagem de builds casuais, então eu criei o projeto pra poder ser um meio termo entre um Team Planner e o Showdown.
 
-Este projeto busca unir informações da PokéAPI com dados organizados manualmente para criar uma experiência mais prática para jogadores que gostam de planejar equipes, completar Pokédex e revisitar jogos antigos da franquia.
+Este projeto busca unir informações da PokéAPI com dados organizados manualmente para criar uma experiência mais prática para jogadores que gostam de planejar equipes e revisitar jogos antigos da franquia.
