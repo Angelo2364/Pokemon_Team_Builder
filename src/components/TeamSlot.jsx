@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TYPE_CHART, TYPE_ABBR, TYPE_COLORS, DARK_TEXT_TYPES, GAME_GROUPS, GAME_VERSION_GROUPS } from "../data/generations";
 
 // ── Shared util ──────────────────────────────────────────────────────────────
@@ -7,8 +7,8 @@ function formatName(name) {
 }
 export function computeWeaknesses(types) {
   const ALL_ATK = [
-    "normal","fire","water","electric","grass","ice","fighting","poison",
-    "ground","flying","psychic","bug","rock","ghost","dragon","dark","steel","fairy",
+    "normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison",
+    "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy",
   ];
   const result = {};
   ALL_ATK.forEach((atk) => {
@@ -28,11 +28,13 @@ export function computeWeaknesses(types) {
 export function TypePill({ type, size = "sm" }) {
   const bg = TYPE_COLORS[type] || "#888";
   const color = DARK_TEXT_TYPES.has(type) ? "#333" : "#fff";
-  const abbr = TYPE_ABBR[type] || type.slice(0,3).toUpperCase();
+  const abbr = TYPE_ABBR[type] || type.slice(0, 3).toUpperCase();
   if (size === "xs") return (
-    <span style={{ background:bg, color, fontSize:9, fontWeight:"bold",
-      padding:"1px 4px", borderRadius:4, letterSpacing:0.5,
-      display:"inline-block", lineHeight:"14px", flexShrink:0 }}>
+    <span style={{
+      background: bg, color, fontSize: 9, fontWeight: "bold",
+      padding: "1px 4px", borderRadius: 4, letterSpacing: 0.5,
+      display: "inline-block", lineHeight: "14px", flexShrink: 0
+    }}>
       {abbr}
     </span>
   );
@@ -43,24 +45,24 @@ export function TypePill({ type, size = "sm" }) {
 export function WeaknessPanel({ types }) {
   const mult = computeWeaknesses(types);
   const sections = [
-    { label:"×4 Fraco",   filter:v=>v===4,    color:"#c0392b" },
-    { label:"×2 Fraco",   filter:v=>v===2,    color:"#e74c3c" },
-    { label:"½ Resiste",  filter:v=>v===0.5,  color:"#27ae60" },
-    { label:"¼ Resiste",  filter:v=>v===0.25, color:"#16a085" },
-    { label:"Imune",      filter:v=>v===0,    color:"#2980b9" },
+    { label: "×4 Fraco", filter: v => v === 4, color: "#c0392b" },
+    { label: "×2 Fraco", filter: v => v === 2, color: "#e74c3c" },
+    { label: "½ Resiste", filter: v => v === 0.5, color: "#27ae60" },
+    { label: "¼ Resiste", filter: v => v === 0.25, color: "#16a085" },
+    { label: "Imune", filter: v => v === 0, color: "#2980b9" },
   ];
   const hasAny = sections.some(({ filter }) => Object.values(mult).some(filter));
   return (
     <div className="weakness-panel">
-      {!hasAny && <p style={{fontSize:12,color:"#888"}}>Sem fraquezas relevantes.</p>}
+      {!hasAny && <p style={{ fontSize: 12, color: "#888" }}>Sem fraquezas relevantes.</p>}
       {sections.map(({ label, filter, color }) => {
-        const entries = Object.entries(mult).filter(([,v])=>filter(v));
+        const entries = Object.entries(mult).filter(([, v]) => filter(v));
         if (!entries.length) return null;
         return (
-          <div key={label} style={{ marginBottom:8 }}>
-            <span style={{ fontSize:11, fontWeight:"bold", color }}>{label}</span>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:4 }}>
-              {entries.map(([t])=><span key={t} className={`type-badge ${t}`}>{t}</span>)}
+          <div key={label} style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: "bold", color }}>{label}</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+              {entries.map(([t]) => <span key={t} className={`type-badge ${t}`}>{t}</span>)}
             </div>
           </div>
         );
@@ -72,8 +74,8 @@ export function WeaknessPanel({ types }) {
 // ── STAB coverage: which types the pokemon hits super-effectively with STAB ──
 export function getSTABCoverage(types) {
   const ALL_DEF = [
-    "normal","fire","water","electric","grass","ice","fighting","poison",
-    "ground","flying","psychic","bug","rock","ghost","dragon","dark","steel","fairy",
+    "normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison",
+    "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy",
   ];
   // For each defending type, check if any of our STAB types hits it super-effectively
   const superEffective = [];
@@ -105,17 +107,17 @@ export function getSTABCoverage(types) {
 export function STABPanel({ types }) {
   const { superEffective, neutral, notVery, immune } = getSTABCoverage(types);
   return (
-    <div style={{ paddingTop:6 }}>
-      <p style={{ fontSize:11, color:"#888", margin:"0 0 10px" }}>
+    <div style={{ paddingTop: 6 }}>
+      <p style={{ fontSize: 11, color: "#888", margin: "0 0 10px" }}>
       </p>
       {[
-        { label:"×2 Super efetivo", list:superEffective, color:"#c0392b" },
-        { label:"½ Pouco efetivo",  list:notVery,        color:"#27ae60" },
-        { label:"✕ Imune",          list:immune,         color:"#2980b9" },
+        { label: "×2 Super efetivo", list: superEffective, color: "#c0392b" },
+        { label: "½ Pouco efetivo", list: notVery, color: "#27ae60" },
+        { label: "✕ Imune", list: immune, color: "#2980b9" },
       ].map(({ label, list, color }) => list.length === 0 ? null : (
-        <div key={label} style={{ marginBottom:8 }}>
-          <span style={{ fontSize:11, fontWeight:"bold", color }}>{label}</span>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:4 }}>
+        <div key={label} style={{ marginBottom: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: "bold", color }}>{label}</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
             {list.map(t => <span key={t} className={`type-badge ${t}`}>{t}</span>)}
           </div>
         </div>
@@ -129,9 +131,9 @@ function LearnBadge({ method, level }) {
   if (method === "level-up") {
     return (
       <span style={{
-        background:"#2c3e50", color:"#fff", fontSize:9, fontWeight:"bold",
-        padding:"1px 5px", borderRadius:4, flexShrink:0, letterSpacing:0.3,
-        fontVariantNumeric:"tabular-nums",
+        background: "#2c3e50", color: "#fff", fontSize: 9, fontWeight: "bold",
+        padding: "1px 5px", borderRadius: 4, flexShrink: 0, letterSpacing: 0.3,
+        fontVariantNumeric: "tabular-nums",
       }}>
         {level > 0 ? `Lv${level}` : "Lv—"}
       </span>
@@ -140,8 +142,8 @@ function LearnBadge({ method, level }) {
   if (method === "machine") {
     return (
       <span style={{
-        background:"#8e44ad", color:"#fff", fontSize:9, fontWeight:"bold",
-        padding:"1px 5px", borderRadius:4, flexShrink:0, letterSpacing:0.3,
+        background: "#8e44ad", color: "#fff", fontSize: 9, fontWeight: "bold",
+        padding: "1px 5px", borderRadius: 4, flexShrink: 0, letterSpacing: 0.3,
       }}>
         TM
       </span>
@@ -150,8 +152,8 @@ function LearnBadge({ method, level }) {
   if (method === "egg") {
     return (
       <span style={{
-        background:"#e67e22", color:"#fff", fontSize:9, fontWeight:"bold",
-        padding:"1px 5px", borderRadius:4, flexShrink:0, letterSpacing:0.3,
+        background: "#e67e22", color: "#fff", fontSize: 9, fontWeight: "bold",
+        padding: "1px 5px", borderRadius: 4, flexShrink: 0, letterSpacing: 0.3,
       }}>
         EGG
       </span>
@@ -160,8 +162,8 @@ function LearnBadge({ method, level }) {
   if (method === "tutor") {
     return (
       <span style={{
-        background:"#16a085", color:"#fff", fontSize:9, fontWeight:"bold",
-        padding:"1px 5px", borderRadius:4, flexShrink:0, letterSpacing:0.3,
+        background: "#16a085", color: "#fff", fontSize: 9, fontWeight: "bold",
+        padding: "1px 5px", borderRadius: 4, flexShrink: 0, letterSpacing: 0.3,
       }}>
         TUT
       </span>
@@ -205,7 +207,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
       if (!details.length) return; // move not available in this version
 
       // Pick the "best" detail: prefer level-up, then machine, then egg, then tutor
-      const methodPriority = { "level-up":0, machine:1, egg:2, tutor:3 };
+      const methodPriority = { "level-up": 0, machine: 1, egg: 2, tutor: 3 };
       const best = [...details].sort((a, b) => {
         const pa = methodPriority[a.move_learn_method.name] ?? 99;
         const pb = methodPriority[b.move_learn_method.name] ?? 99;
@@ -220,7 +222,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
     });
 
     // Sort: level-up first (by level asc), then machine, then egg, then tutor, then rest
-    const methodOrder = { "level-up":0, machine:1, egg:2, tutor:3 };
+    const methodOrder = { "level-up": 0, machine: 1, egg: 2, tutor: 3 };
     return Object.entries(moveMap)
       .sort(([nameA, a], [nameB, b]) => {
         const pa = methodOrder[a.method] ?? 4;
@@ -255,10 +257,10 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
           accuracy: d.accuracy ?? null,
           desc: descEntry?.flavor_text?.replace(/\f/g, " ") || "",
         }];
-      } catch { return [name, { type:"normal", damageClass:"status", power:null, accuracy:null, desc:"" }]; }
+      } catch { return [name, { type: "normal", damageClass: "status", power: null, accuracy: null, desc: "" }]; }
     })).then(results => {
       if (cancelled) return;
-      setMoveDetails(prev => { const n={...prev}; results.forEach(([k,v])=>{n[k]=v;}); return n; });
+      setMoveDetails(prev => { const n = { ...prev }; results.forEach(([k, v]) => { n[k] = v; }); return n; });
     });
     return () => { cancelled = true; };
   }, [moveSearch, selectedVersion, pokemon.id]);
@@ -275,21 +277,21 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
     <div className="moves-panel">
       {/* Selected move slots */}
       <div className="selected-moves">
-        {[0,1,2,3].map(i => {
+        {[0, 1, 2, 3].map(i => {
           const mv = selectedMoves[i];
           const det = mv ? moveDetails[mv] : null;
           const bg = det ? (TYPE_COLORS[det.type] || "#333") : null;
           const tc = det && DARK_TEXT_TYPES.has(det.type) ? "#333" : "#fff";
           return (
-            <div key={i} className={`move-slot ${mv?"filled":"empty"}`}
-              style={bg ? {background:bg,color:tc,border:"none"} : {}}
+            <div key={i} className={`move-slot ${mv ? "filled" : "empty"}`}
+              style={bg ? { background: bg, color: tc, border: "none" } : {}}
               onClick={() => mv && toggleMove(mv)}>
               {mv ? (
-                <span style={{display:"flex",alignItems:"center",gap:4,justifyContent:"center"}}>
-                  {det && <TypePill type={det.type} size="xs"/>}
-                  {mv.replace(/-/g," ")}
+                <span style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
+                  {det && <TypePill type={det.type} size="xs" />}
+                  {mv.replace(/-/g, " ")}
                 </span>
-              ) : `— Move ${i+1}`}
+              ) : `— Move ${i + 1}`}
             </div>
           );
         })}
@@ -301,9 +303,9 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
         onChange={e => { setSelectedVersion(e.target.value); setUserOverrode(true); }}
         onClick={e => e.stopPropagation()}
         style={{
-          width:"100%", boxSizing:"border-box",
-          padding:"5px 8px", border:"1px solid #ccc", borderRadius:8,
-          fontSize:11, marginBottom:6, background:"#fafafa", color:"#333",
+          width: "100%", boxSizing: "border-box",
+          padding: "5px 8px", border: "1px solid #ccc", borderRadius: 8,
+          fontSize: 11, marginBottom: 6, background: "#fafafa", color: "#333",
         }}>
         <option value="all">Todos os jogos</option>
         {GAME_GROUPS.map(g => (
@@ -319,7 +321,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
       {/* Move list */}
       <div className="move-list">
         {filtered.length === 0 && (
-          <p style={{fontSize:11,color:"#aaa",textAlign:"center",margin:"8px 0"}}>
+          <p style={{ fontSize: 11, color: "#aaa", textAlign: "center", margin: "8px 0" }}>
             Nenhum golpe disponível nesta versão.
           </p>
         )}
@@ -331,37 +333,37 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
           const isExpanded = expandedMove === m.name;
           return (
             <div key={m.name}
-              className={`move-option ${active?"active":""} ${!active&&selectedMoves.length>=4?"disabled":""}`}
+              className={`move-option ${active ? "active" : ""} ${!active && selectedMoves.length >= 4 ? "disabled" : ""}`}
               style={mt ? {
-                background: active ? "#222" : bg+"33",
+                background: active ? "#222" : bg + "33",
                 borderLeft: `5px solid ${bg}`,
                 color: active ? "#fff" : "#222",
               } : {}}
               onClick={e => { e.stopPropagation(); toggleMove(m.name); }}>
               {/* Linha principal */}
-              <span style={{display:"flex",alignItems:"center",gap:6,width:"100%"}}>
-                {mt && <TypePill type={mt} size="xs"/>}
+              <span style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
+                {mt && <TypePill type={mt} size="xs" />}
                 {det && (
-                  <span style={{fontSize:13, flexShrink:0}} title={det.damageClass}>
+                  <span style={{ fontSize: 13, flexShrink: 0 }} title={det.damageClass}>
                     {DAMAGE_CLASS_ICON[det.damageClass] || "◎"}
                   </span>
                 )}
-                <span style={{textTransform:"capitalize",flex:1,fontSize:12}}>
-                  {m.name.replace(/-/g," ")}
-                </span> 
-                <span style={{fontSize:11,color:active?"#aaa":"#646464",flexShrink:0,marginRight:2}}> 
+                <span style={{ textTransform: "capitalize", flex: 1, fontSize: 12 }}>
+                  {m.name.replace(/-/g, " ")}
+                </span>
+                <span style={{ fontSize: 11, color: active ? "#aaa" : "#646464", flexShrink: 0, marginRight: 2 }}>
                   {det ? (det.power ? `Pwr:${det.power}` : "Pwr:—") : ""}
                 </span>
-                <span style={{fontSize:11,color:active?"#aaa":"#646464",flexShrink:0,marginRight:2}}> 
+                <span style={{ fontSize: 11, color: active ? "#aaa" : "#646464", flexShrink: 0, marginRight: 2 }}>
                   {det ? (det.accuracy ? `Acc:${det.accuracy}` : "Acc:—") : ""}
                 </span>
-                <LearnBadge method={m.method} level={m.level}/>
+                <LearnBadge method={m.method} level={m.level} />
                 {det?.desc && (
                   <button
                     style={{
-                      marginLeft:3, padding:"1px 5px", fontSize:8, fontWeight:"bold",
-                      border:"1px solid currentColor", borderRadius:4, background:"transparent",
-                      cursor:"pointer", color:"inherit", opacity:0.7, flexShrink:0, lineHeight:1.4,
+                      marginLeft: 3, padding: "1px 5px", fontSize: 8, fontWeight: "bold",
+                      border: "1px solid currentColor", borderRadius: 4, background: "transparent",
+                      cursor: "pointer", color: "inherit", opacity: 0.7, flexShrink: 0, lineHeight: 1.4,
                     }}
                     onClick={e => { e.stopPropagation(); setExpandedMove(isExpanded ? null : m.name); }}>
                     {isExpanded ? "▲" : "▼"}
@@ -371,10 +373,10 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
               {/* Descrição expandida */}
               {isExpanded && det?.desc && (
                 <p style={{
-                  margin:"5px 0 2px", fontSize:13, lineHeight:1.5,
+                  margin: "5px 0 2px", fontSize: 13, lineHeight: 1.5,
                   color: active ? "#ddd" : "#555",
                   borderTop: `1px solid ${active ? "#444" : "#ddd"}`,
-                  paddingTop:4,
+                  paddingTop: 4,
                 }}>
                   {det.desc}
                 </p>
@@ -403,7 +405,7 @@ function AbilityDesc({ abilityName }) {
         if (cancelled) return;
         const entry = d.flavor_text_entries?.find(e => e.language.name === "en");
         const effect = d.effect_entries?.find(e => e.language.name === "en");
-        setDesc(effect?.short_effect || entry?.flavor_text?.replace(/\f/g," ") || "Sem descrição disponível.");
+        setDesc(effect?.short_effect || entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.");
         setLoading(false);
       })
       .catch(() => { if (!cancelled) { setDesc("Erro ao carregar."); setLoading(false); } });
@@ -412,24 +414,38 @@ function AbilityDesc({ abilityName }) {
 
   return (
     <div style={{
-      marginTop:12, padding:"10px 12px", borderRadius:10,
-      background:"#f7f7f7", border:"1px solid #e8e8e8",
+      marginTop: 12, padding: "10px 12px", borderRadius: 10,
+      background: "#f7f7f7", border: "1px solid #e8e8e8",
     }}>
-      <span style={{fontSize:12,fontWeight:"bold",color:"#555",display:"block",marginBottom:4}}>
+      <span style={{ fontSize: 12, fontWeight: "bold", color: "#555", display: "block", marginBottom: 4 }}>
         Habilidade — {formatName(abilityName)}
       </span>
       {loading
-        ? <span style={{fontSize:11,color:"#aaa"}}>Carregando...</span>
-        : <span style={{fontSize:12,color:"#333",lineHeight:1.5}}>{desc}</span>
+        ? <span style={{ fontSize: 11, color: "#aaa" }}>Carregando...</span>
+        : <span style={{ fontSize: 12, color: "#333", lineHeight: 1.5 }}>{desc}</span>
       }
     </div>
   );
 }
-function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPokemon, removePokemon, filterGame }) {
+function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPokemon, removePokemon, filterGame, panelLeft }) {
   const [activeTab, setActiveTab] = useState("stats");
   const [forms, setForms] = useState(null);
+  const panelRef = useRef(null);
 
   const isOpen = detailsPokemon === index;
+
+  // Fecha ao clicar fora do painel — listener ativo só quando o painel está aberto
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e) {
+      if (e.target.closest(".slot-detail-btn")) return;
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setDetailsPokemon(-1);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!pokemon) return;
@@ -472,12 +488,12 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
         isBaseForm: isBase,
       };
       setTeam(t);
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
   }
 
   if (!pokemon) return (
     <div className="team-slot-wrapper" style={{ background: "#ddd" }}>
-      <div className="team-slot" style={{ justifyContent:"center", cursor:"default" }}>
+      <div className="team-slot" style={{ justifyContent: "center", cursor: "default" }}>
         <span style={{ fontSize: 28, color: "#bbb", fontWeight: 300 }}>+</span>
       </div>
     </div>
@@ -493,125 +509,197 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
 
   return (
     <div className="team-slot-wrapper" style={{ background: wrapperBg }}>
-    <div className="team-slot">
+      <div className="team-slot">
 
-      {/* ── TOPO: botão remover (esquerda) + nome (centro) ── */}
-      <div className="slot-top">
-        <button className="slot-remove-btn" title="Remover"
-          onClick={e => { e.stopPropagation(); removePokemon(index); }}>
-          ✕
-        </button>
-        <span className="slot-pokemon-name">{formatName(pokemon.name)}</span>
-      </div>
-
-      {/* ── MEIO: sprite ── */}
-      <div className="slot-mid">
-        <img src={pokemon.isShiny ? pokemon.shinySprite : pokemon.sprite}
-          alt={pokemon.name} className="team-sprite" title={pokemon.name}/>
-      </div>
-
-      {/* ── BAIXO: tipos + formas + controles ── */}
-      <div className="slot-bottom">
-        <div className="pokemon-types">
-          {pokemon.types.map(t => (
-            <span key={t} className={`type-badge ${t}`}>{t}</span>
-          ))}
+        {/* ── TOPO: botão remover (esquerda) + nome (centro) ── */}
+        <div className="slot-top">
+          <button className="slot-remove-btn" title="Remover"
+            onClick={e => { e.stopPropagation(); removePokemon(index); }}>
+            ✕
+          </button>
+          <span className="slot-pokemon-name">{formatName(pokemon.name)}</span>
         </div>
 
-        {/* Formas alternativas */}
-        {forms && forms.length > 0 && (
-          <div className="forms-row" onClick={e => e.stopPropagation()}>
-            <span style={{fontSize:10,color:"#888"}}>Formas:</span>
-            {forms.slice(0, 4).map(f => (
-              <button key={f.pokemon.name} className="form-btn"
-                onClick={() => switchFormKeepingBase(f.pokemon.name, false)}>
-                {f.pokemon.name
-                  .replace((pokemon.baseFormName || pokemon.name).toLowerCase() + "-", "")
-                  .replace(/-/g, " ")}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Voltar à forma base */}
-        {isAlternateForm && pokemon.baseFormName && (
-          <div className="forms-row" onClick={e => e.stopPropagation()}>
-            <button className="form-btn"
-              style={{ background:"#fff0f0", borderColor:"#e74c3c", color:"#c0392b", fontWeight:"bold" }}
-              onClick={() => switchFormKeepingBase(pokemon.baseFormName, true)}>
-              ↩ Forma base
-            </button>
-          </div>
-        )}
-
-        <div className="pokemon-controls">
-          <select value={pokemon.selectedAbility}
-            onClick={e => e.stopPropagation()}
-            onChange={e => {
-              const t = [...team];
-              t[index] = { ...pokemon, selectedAbility: e.target.value };
-              setTeam(t);
-            }}
-            className="slot-ability-select">
-            {pokemon.abilities.map(a => <option key={a} value={a}>{formatName(a)}</option>)}
-          </select>
-
-          <button title={pokemon.isShiny ? "Shiny ativado" : "Ativar shiny"}
-            className={`slot-icon-btn ${pokemon.isShiny ? "slot-icon-btn--active" : ""}`}
-            onClick={e => {
-              e.stopPropagation();
-              const t = [...team];
-              t[index] = { ...pokemon, isShiny: !pokemon.isShiny };
-              setTeam(t);
-            }}>
-            ✦
-          </button>
-
-          <button className={`slot-detail-btn ${isOpen ? "slot-detail-btn--open" : ""}`}
-            onClick={e => {
-              e.stopPropagation();
-              setDetailsPokemon(isOpen ? -1 : index);
-            }}>
-            {isOpen ? "X Fechar" : "Detalhes"}
-          </button>
+        {/* ── MEIO: sprite ── */}
+        <div className="slot-mid">
+          <img src={pokemon.isShiny ? pokemon.shinySprite : pokemon.sprite}
+            alt={pokemon.name} className="team-sprite" title={pokemon.name} />
         </div>
-      </div>
 
-      {isOpen && (
-        <div className="stats-panel" onClick={e => e.stopPropagation()}>
-          <div className="detail-tabs">
-            {[["stats","Stats"],["moves","Moves"],["weak","Fraquezas"],["stab","Coberturas"]].map(([tab,label]) => (
-              <button key={tab} className={`tab-btn ${activeTab===tab?"active":""}`}
-                onClick={e => { e.stopPropagation(); setActiveTab(tab); }}>
-                {label}
-              </button>
+        {/* ── BAIXO: tipos + formas + controles ── */}
+        <div className="slot-bottom">
+          <div className="pokemon-types">
+            {pokemon.types.map(t => (
+              <span key={t} className={`type-badge ${t}`}>{t}</span>
             ))}
           </div>
 
-          {activeTab==="stats" && (
-            <div style={{paddingTop:8}}>
-              {pokemon.stats.map(stat => (
-                <div key={stat.stat.name} className="stat-row">
-                  <span>{{"hp":"HP","attack":"ATK","defense":"DEF","special-attack":"SPA","special-defense":"SPD","speed":"SPE"}[stat.stat.name]}</span>
-                  <div className="stat-bar">
-                    <div className="stat-fill" style={{width:`${(stat.base_stat/255)*100}%`}}/>
-                  </div>
-                  <span className="stat-value">{stat.base_stat}</span>
-                </div>
+          {/* Formas alternativas */}
+          {forms && forms.length > 0 && (
+            <div className="forms-row" onClick={e => e.stopPropagation()}>
+              <span style={{ fontSize: 10, color: "#888" }}>Formas:</span>
+              {forms.slice(0, 4).map(f => (
+                <button key={f.pokemon.name} className="form-btn"
+                  onClick={() => switchFormKeepingBase(f.pokemon.name, false)}>
+                  {f.pokemon.name
+                    .replace((pokemon.baseFormName || pokemon.name).toLowerCase() + "-", "")
+                    .replace(/-/g, " ")}
+                </button>
               ))}
-              <AbilityDesc abilityName={pokemon.selectedAbility}/>
             </div>
           )}
-          {activeTab==="moves" && (
-            <MovesPanel
-              pokemon={pokemon} index={index} team={team} setTeam={setTeam}
-              filterGame={filterGame}/>
+
+          {/* Voltar à forma base */}
+          {isAlternateForm && pokemon.baseFormName && (
+            <div className="forms-row" onClick={e => e.stopPropagation()}>
+              <button className="form-btn"
+                style={{ background: "#fff0f0", borderColor: "#e74c3c", color: "#c0392b", fontWeight: "bold" }}
+                onClick={() => switchFormKeepingBase(pokemon.baseFormName, true)}>
+                ↩ Forma base
+              </button>
+            </div>
           )}
-          {activeTab==="weak" && <WeaknessPanel types={pokemon.types}/>}
-          {activeTab==="stab" && <STABPanel types={pokemon.types}/>}
+
+          <div className="pokemon-controls">
+            <select value={pokemon.selectedAbility}
+              onClick={e => e.stopPropagation()}
+              onChange={e => {
+                const t = [...team];
+                t[index] = { ...pokemon, selectedAbility: e.target.value };
+                setTeam(t);
+              }}
+              className="slot-ability-select">
+              {pokemon.abilities.map(a => <option key={a} value={a}>{formatName(a)}</option>)}
+            </select>
+
+            <button title={pokemon.isShiny ? "Shiny ativado" : "Ativar shiny"}
+              className={`slot-icon-btn ${pokemon.isShiny ? "slot-icon-btn--active" : ""}`}
+              onClick={e => {
+                e.stopPropagation();
+                const t = [...team];
+                t[index] = { ...pokemon, isShiny: !pokemon.isShiny };
+                setTeam(t);
+              }}>
+              ✦
+            </button>
+
+            <button className={`slot-detail-btn ${isOpen ? "slot-detail-btn--open" : ""}`}
+              onClick={e => {
+                e.stopPropagation();
+                setDetailsPokemon(isOpen ? -1 : index);
+              }}>
+              {isOpen ? "X Fechar" : "Detalhes"}
+            </button>
+          </div>
         </div>
-      )}
+
+        {isOpen && (
+          <div
+            ref={panelRef}
+            className={`stats-panel${panelLeft ? " stats-panel--left" : ""}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="detail-tabs">
+              {[["stats", "Stats"], ["moves", "Moves"], ["weak", "Fraquezas"], ["stab", "Coberturas"]].map(([tab, label]) => (
+                <button key={tab} className={`tab-btn ${activeTab === tab ? "active" : ""}`}
+                  onClick={e => { e.stopPropagation(); setActiveTab(tab); }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === "stats" && (
+              <div style={{ paddingTop: 8 }}>
+                {pokemon.stats.map(stat => (
+                  <div key={stat.stat.name} className="stat-row">
+                    <span>{{ "hp": "HP", "attack": "ATK", "defense": "DEF", "special-attack": "SPA", "special-defense": "SPD", "speed": "SPE" }[stat.stat.name]}</span>
+                    <div className="stat-bar">
+                      <div className="stat-fill" style={{ width: `${(stat.base_stat / 255) * 100}%` }} />
+                    </div>
+                    <span className="stat-value">{stat.base_stat}</span>
+                  </div>
+                ))}
+                <AbilityDesc abilityName={pokemon.selectedAbility} />
+              </div>
+            )}
+            {activeTab === "moves" && (
+              <MovesPanel
+                pokemon={pokemon} index={index} team={team} setTeam={setTeam}
+                filterGame={filterGame} />
+            )}
+            {activeTab === "weak" && <WeaknessPanel types={pokemon.types} />}
+            {activeTab === "stab" && <STABPanel types={pokemon.types} />}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+// ── TeamMoveCard — golpes de um slot exibidos abaixo do time ─────────────────
+export function TeamMoveCard({ pokemon }) {
+  const [details, setDetails] = useState({});
+
+  const moves = pokemon?.selectedMoves || [];
+
+  useEffect(() => {
+    if (!moves.length) return;
+    let cancelled = false;
+    const toFetch = moves.filter(m => !details[m]);
+    if (!toFetch.length) return;
+    Promise.all(toFetch.map(async name => {
+      try {
+        const r = await fetch(`https://pokeapi.co/api/v2/move/${name}/`);
+        const d = await r.json();
+        return [name, {
+          type: d.type?.name || "normal",
+          damageClass: d.damage_class?.name || "status",
+        }];
+      } catch { return [name, { type: "normal", damageClass: "status" }]; }
+    })).then(results => {
+      if (cancelled) return;
+      setDetails(prev => { const n = { ...prev }; results.forEach(([k, v]) => { n[k] = v; }); return n; });
+    });
+    return () => { cancelled = true; };
+  }, [moves.join(",")]);
+
+  const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯" };
+
+  if (!pokemon) return <div className="team-move-card team-move-card--empty" />;
+
+  const hasMoves = moves.length > 0;
+
+  return (
+    <div className="team-move-card">
+      {hasMoves ? (
+        <div className="team-move-grid">
+          {[0, 1, 2, 3].map(i => {
+            const mv = moves[i];
+            const det = mv ? details[mv] : null;
+            const bg = det ? (TYPE_COLORS[det.type] || "#888") : null;
+            const tc = det && DARK_TEXT_TYPES.has(det.type) ? "#333" : "#fff";
+            return (
+              <div key={i} className="team-move-tile"
+                style={bg ? { background: bg, color: tc } : {}}>
+                {mv ? (
+                  <div className="team-move-tile-top">
+                    {det && (
+                      <span className="team-move-class-icon" title={det.damageClass}>
+                        {DAMAGE_CLASS_ICON[det.damageClass] || ""}
+                      </span>
+                    )}
+                    <span className="team-move-name">{mv.replace(/-/g, " ")}</span>
+                  </div>
+                ) : (
+                  <span className="team-move-empty-slot">— {i + 1}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="team-move-no-moves">sem golpes</div>
+      )}
     </div>
   );
 }

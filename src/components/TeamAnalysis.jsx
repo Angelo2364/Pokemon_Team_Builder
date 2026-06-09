@@ -82,7 +82,7 @@ poison: "☠️ Eu entendo, eu também nunca lembro que poison bate tanto assim.
 };
 
 const teamWarnings = ALL_TYPES.filter(
-  t => summary[t].weak >= 3 && weaknessMessages[t]
+  t => summary[t].weak >= 4 && weaknessMessages[t]
 );
   const gaps = ALL_TYPES.filter(t=>{
     const coverageTypes = active.flatMap(p=>p.types);
@@ -165,7 +165,7 @@ const teamWarnings = ALL_TYPES.filter(
         <div
           key={type}
           style={{
-            background: "#ebebeb",
+            background: "#ececec",
             border: "1px solid #c9c9c9",
             borderRadius: 8,
             padding: "10px 12px",
