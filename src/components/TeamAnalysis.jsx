@@ -43,6 +43,47 @@ export default function TeamAnalysis({ team }) {
     .sort((a,b)=>summary[b].weak-summary[a].weak);
   const strengths = ALL_TYPES.filter(t=>summary[t].resist+summary[t].immune>0)
     .sort((a,b)=>(summary[b].resist+summary[b].immune)-(summary[a].resist+summary[a].immune));
+    const weaknessMessages = {
+
+ ghost: "👻 Seu time LITERALMENTE tem medo de fantasmas.",
+
+fighting: "🥊 Um Poatan acaba com teu time, com todo respeito.",
+
+ground: "🌎 Um Earthquake bem dado acaba com seu time.",
+
+ice: "🧊 Seu time não sobreviveria a uma viagem para Sinnoh.",
+
+water: "💧 Olha a onda, olha a onda.",
+
+fire: "🔥 Tá criando uma plantação??",
+
+flying: "🌪️ Ala, teu time tem medo de ventinho.",
+
+dragon: "🐉 O Burro do Shrek desenrola com dragões melhor que você.",
+
+grass: "🌿 O Shorty de Todo Mundo em Pânico acaba com seu time.",
+
+fairy: "🌈 Uui, tem medo de fadinha é?",
+
+steel: "⚙️ Você tá FERRADO, entendeu?? Ferro...",
+
+dark: "🌑 Para, ninguém tem fraqueza a Dark, esse texto nunca vai ser lido.",
+
+psychic: "🔮 Uuuu eu dobro colheres e derroto seu time.",
+
+electric: "⚡ Seu time toma choque até de carregador de celular.",
+
+bug: "🐛 Parabéns, você montou um time que perde pra um Caterpie.",
+
+rock: "🪨 Pedrada resolve mais problemas do que deveria.",
+
+poison: "☠️ Eu entendo, eu também nunca lembro que poison bate tanto assim...",
+
+};
+
+const teamWarnings = ALL_TYPES.filter(
+  t => summary[t].weak >= 3 && weaknessMessages[t]
+);
   const gaps = ALL_TYPES.filter(t=>{
     const coverageTypes = active.flatMap(p=>p.types);
     return !coverageTypes.includes(t) && summary[t].weak>=2;
@@ -73,7 +114,7 @@ export default function TeamAnalysis({ team }) {
 
       {/* STAB */}
       <div className="analysis-section" style={{marginBottom:20}}>
-        <h3>⚡ Cobertura ofensiva STAB do time</h3>
+        <h3>⚡ Cobertura ofensiva do time</h3>
         <p className="analysis-hint">Tipos que o time bate com super-efetividade via STAB</p>
         {(() => {
           const teamSTAB = [...new Set(active.flatMap(p=>p.types))];
@@ -108,6 +149,35 @@ export default function TeamAnalysis({ team }) {
             {weaknesses.map(t=><Cell key={t} type={t} count={summary[t].weak} mode="weak"/>)}
             {!weaknesses.length&&<p style={{fontSize:13,color:"#888"}}>Nenhuma!</p>}
           </div>
+          {teamWarnings.length > 0 && (
+  <div className="analysis-section" style={{ marginTop: 20 }}>
+    <h3>💡 Conselhos de amigo</h3>
+    <p className="analysis-hint">
+      Observações sobre as fraquezas críticas do seu time
+    </p>
+
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }}>
+      {teamWarnings.map(type => (
+        <div
+          key={type}
+          style={{
+            background: "#ebebeb",
+            border: "1px solid #c9c9c9",
+            borderRadius: 8,
+            padding: "10px 12px",
+            fontSize: 13
+          }}
+        >
+          {weaknessMessages[type]}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         </div>
         <div className="analysis-section">
           <h3>🛡 Resistências do time</h3>
@@ -121,3 +191,4 @@ export default function TeamAnalysis({ team }) {
     </div>
   );
 }
+

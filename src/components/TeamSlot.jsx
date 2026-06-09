@@ -106,12 +106,10 @@ export function STABPanel({ types }) {
   const { superEffective, neutral, notVery, immune } = getSTABCoverage(types);
   return (
     <div style={{ paddingTop:6 }}>
-      <p style={{ fontSize:12, color:"#888", margin:"0 0 10px" }}>
-        Cobertura ofensiva com STAB — tipos que este Pokémon acerta:
+      <p style={{ fontSize:11, color:"#888", margin:"0 0 10px" }}>
       </p>
       {[
         { label:"×2 Super efetivo", list:superEffective, color:"#c0392b" },
-        { label:"×1 Normal",        list:neutral,        color:"#555" },
         { label:"½ Pouco efetivo",  list:notVery,        color:"#27ae60" },
         { label:"✕ Imune",          list:immune,         color:"#2980b9" },
       ].map(({ label, list, color }) => list.length === 0 ? null : (
@@ -173,13 +171,13 @@ function LearnBadge({ method, level }) {
 }
 
 // ── MovesPanel ───────────────────────────────────────────────────────────────
+const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯︎" };
+
 function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
   const [moveSearch, setMoveSearch] = useState("");
-  const [moveTypes, setMoveTypes] = useState({});
-  // Local version selector — initialized from filterGame, but user can override
+  const [moveDetails, setMoveDetails] = useState({}); // name -> { type, damageClass, power, desc, accuracy }
+  const [expandedMove, setExpandedMove] = useState(null); // nome do golpe com desc aberta
   const [selectedVersion, setSelectedVersion] = useState(filterGame || "all");
-
-  // Sync with global filterGame when it changes, but only if user hasn't overridden
   const [userOverrode, setUserOverrode] = useState(false);
   useEffect(() => {
     if (!userOverrode) setSelectedVersion(filterGame || "all");
@@ -239,21 +237,28 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
     m.name.toLowerCase().includes(moveSearch.toLowerCase())
   );
 
-  // Fetch types for visible moves
+  // Fetch detalhes dos golpes visíveis
   useEffect(() => {
     let cancelled = false;
     const visible = filtered.slice(0, 80);
-    const toFetch = visible.filter(m => !moveTypes[m.name]);
+    const toFetch = visible.filter(m => !moveDetails[m.name]);
     if (!toFetch.length) return;
     Promise.all(toFetch.map(async ({ name }) => {
       try {
         const r = await fetch(`https://pokeapi.co/api/v2/move/${name}/`);
         const d = await r.json();
-        return [name, d.type?.name || "normal"];
-      } catch { return [name, "normal"]; }
+        const descEntry = d.flavor_text_entries?.find(e => e.language.name === "en");
+        return [name, {
+          type: d.type?.name || "normal",
+          damageClass: d.damage_class?.name || "status",
+          power: d.power ?? null,
+          accuracy: d.accuracy ?? null,
+          desc: descEntry?.flavor_text?.replace(/\f/g, " ") || "",
+        }];
+      } catch { return [name, { type:"normal", damageClass:"status", power:null, accuracy:null, desc:"" }]; }
     })).then(results => {
       if (cancelled) return;
-      setMoveTypes(prev => { const n={...prev}; results.forEach(([k,v])=>{n[k]=v;}); return n; });
+      setMoveDetails(prev => { const n={...prev}; results.forEach(([k,v])=>{n[k]=v;}); return n; });
     });
     return () => { cancelled = true; };
   }, [moveSearch, selectedVersion, pokemon.id]);
@@ -272,16 +277,16 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
       <div className="selected-moves">
         {[0,1,2,3].map(i => {
           const mv = selectedMoves[i];
-          const mvType = mv ? (moveTypes[mv] || null) : null;
-          const bg = mvType ? (TYPE_COLORS[mvType] || "#333") : null;
-          const tc = mvType && DARK_TEXT_TYPES.has(mvType) ? "#333" : "#fff";
+          const det = mv ? moveDetails[mv] : null;
+          const bg = det ? (TYPE_COLORS[det.type] || "#333") : null;
+          const tc = det && DARK_TEXT_TYPES.has(det.type) ? "#333" : "#fff";
           return (
             <div key={i} className={`move-slot ${mv?"filled":"empty"}`}
               style={bg ? {background:bg,color:tc,border:"none"} : {}}
               onClick={() => mv && toggleMove(mv)}>
               {mv ? (
                 <span style={{display:"flex",alignItems:"center",gap:4,justifyContent:"center"}}>
-                  {mvType && <TypePill type={mvType} size="xs"/>}
+                  {det && <TypePill type={det.type} size="xs"/>}
                   {mv.replace(/-/g," ")}
                 </span>
               ) : `— Move ${i+1}`}
@@ -320,24 +325,60 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
         )}
         {filtered.slice(0, 80).map(m => {
           const active = selectedMoves.includes(m.name);
-          const mt = moveTypes[m.name];
+          const det = moveDetails[m.name];
+          const mt = det?.type;
           const bg = mt ? (TYPE_COLORS[mt] || "#eee") : "#f5f5f5";
+          const isExpanded = expandedMove === m.name;
           return (
             <div key={m.name}
               className={`move-option ${active?"active":""} ${!active&&selectedMoves.length>=4?"disabled":""}`}
               style={mt ? {
                 background: active ? "#222" : bg+"33",
-                borderLeft: `3px solid ${bg}`,
+                borderLeft: `5px solid ${bg}`,
                 color: active ? "#fff" : "#222",
               } : {}}
               onClick={e => { e.stopPropagation(); toggleMove(m.name); }}>
-              <span style={{display:"flex",alignItems:"center",gap:5,width:"100%"}}>
+              {/* Linha principal */}
+              <span style={{display:"flex",alignItems:"center",gap:6,width:"100%"}}>
                 {mt && <TypePill type={mt} size="xs"/>}
-                <span style={{textTransform:"capitalize",flex:1}}>
+                {det && (
+                  <span style={{fontSize:13, flexShrink:0}} title={det.damageClass}>
+                    {DAMAGE_CLASS_ICON[det.damageClass] || "◎"}
+                  </span>
+                )}
+                <span style={{textTransform:"capitalize",flex:1,fontSize:12}}>
                   {m.name.replace(/-/g," ")}
+                </span> 
+                <span style={{fontSize:11,color:active?"#aaa":"#646464",flexShrink:0,marginRight:2}}> 
+                  {det ? (det.power ? `Pwr:${det.power}` : "Pwr:—") : ""}
+                </span>
+                <span style={{fontSize:11,color:active?"#aaa":"#646464",flexShrink:0,marginRight:2}}> 
+                  {det ? (det.accuracy ? `Acc:${det.accuracy}` : "Acc:—") : ""}
                 </span>
                 <LearnBadge method={m.method} level={m.level}/>
+                {det?.desc && (
+                  <button
+                    style={{
+                      marginLeft:3, padding:"1px 5px", fontSize:8, fontWeight:"bold",
+                      border:"1px solid currentColor", borderRadius:4, background:"transparent",
+                      cursor:"pointer", color:"inherit", opacity:0.7, flexShrink:0, lineHeight:1.4,
+                    }}
+                    onClick={e => { e.stopPropagation(); setExpandedMove(isExpanded ? null : m.name); }}>
+                    {isExpanded ? "▲" : "▼"}
+                  </button>
+                )}
               </span>
+              {/* Descrição expandida */}
+              {isExpanded && det?.desc && (
+                <p style={{
+                  margin:"5px 0 2px", fontSize:13, lineHeight:1.5,
+                  color: active ? "#ddd" : "#555",
+                  borderTop: `1px solid ${active ? "#444" : "#ddd"}`,
+                  paddingTop:4,
+                }}>
+                  {det.desc}
+                </p>
+              )}
             </div>
           );
         })}
@@ -346,7 +387,44 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
   );
 }
 
-// ── TeamSlot ─────────────────────────────────────────────────────────────────
+// ── AbilityDesc — seção de descrição de habilidade ──────────────────────────
+function AbilityDesc({ abilityName }) {
+  const [desc, setDesc] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!abilityName) return;
+    let cancelled = false;
+    setDesc(null);
+    setLoading(true);
+    fetch(`https://pokeapi.co/api/v2/ability/${abilityName}/`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        const entry = d.flavor_text_entries?.find(e => e.language.name === "en");
+        const effect = d.effect_entries?.find(e => e.language.name === "en");
+        setDesc(effect?.short_effect || entry?.flavor_text?.replace(/\f/g," ") || "Sem descrição disponível.");
+        setLoading(false);
+      })
+      .catch(() => { if (!cancelled) { setDesc("Erro ao carregar."); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [abilityName]);
+
+  return (
+    <div style={{
+      marginTop:12, padding:"10px 12px", borderRadius:10,
+      background:"#f7f7f7", border:"1px solid #e8e8e8",
+    }}>
+      <span style={{fontSize:12,fontWeight:"bold",color:"#555",display:"block",marginBottom:4}}>
+        Habilidade — {formatName(abilityName)}
+      </span>
+      {loading
+        ? <span style={{fontSize:11,color:"#aaa"}}>Carregando...</span>
+        : <span style={{fontSize:12,color:"#333",lineHeight:1.5}}>{desc}</span>
+      }
+    </div>
+  );
+}
 function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPokemon, removePokemon, filterGame }) {
   const [activeTab, setActiveTab] = useState("stats");
   const [forms, setForms] = useState(null);
@@ -494,7 +572,7 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
               e.stopPropagation();
               setDetailsPokemon(isOpen ? -1 : index);
             }}>
-            {isOpen ? "✕ Fechar" : "Detalhes"}
+            {isOpen ? "X Fechar" : "Detalhes"}
           </button>
         </div>
       </div>
@@ -502,7 +580,7 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
       {isOpen && (
         <div className="stats-panel" onClick={e => e.stopPropagation()}>
           <div className="detail-tabs">
-            {[["stats","Stats"],["moves","Moves"],["weak","Fraquezas"],["stab","STAB"]].map(([tab,label]) => (
+            {[["stats","Stats"],["moves","Moves"],["weak","Fraquezas"],["stab","Coberturas"]].map(([tab,label]) => (
               <button key={tab} className={`tab-btn ${activeTab===tab?"active":""}`}
                 onClick={e => { e.stopPropagation(); setActiveTab(tab); }}>
                 {label}
@@ -521,6 +599,7 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
                   <span className="stat-value">{stat.base_stat}</span>
                 </div>
               ))}
+              <AbilityDesc abilityName={pokemon.selectedAbility}/>
             </div>
           )}
           {activeTab==="moves" && (
