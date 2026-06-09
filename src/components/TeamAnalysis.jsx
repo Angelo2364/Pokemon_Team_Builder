@@ -118,16 +118,6 @@ export default function TeamAnalysis({ team }) {
           </div>
         </div>
       </div>
-
-      {gaps.length>0&&(
-        <div className="analysis-section analysis-gaps" style={{marginTop:16,borderTop:"1px solid #eee",paddingTop:16}}>
-          <h3>🔴 Lacunas de cobertura</h3>
-          <p className="analysis-hint">Tipos que batem em ≥2 membros sem resistência no time</p>
-          <div className="analysis-types">
-            {gaps.map(t=><span key={t} className={`type-badge ${t}`}>{t}</span>)}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

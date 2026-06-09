@@ -76,20 +76,83 @@ body {
   margin-bottom: 40px;
 }
 
+/* ── Team slot wrapper — sempre presente, carrega o contorno colorido ── */
+.team-slot-wrapper {
+  border-radius: 24px;
+  padding: 6px;           /* espessura do contorno — igual pra 1 e 2 tipos */
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
 /* ── Team slot ── */
 .team-slot {
   background: white;
   border-radius: 20px;
-  min-height: 250px;
+  height: 100%;
+  min-height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;  /* topo / meio / baixo sempre nos mesmos lugares */
+  cursor: default;
+  font-weight: bold;
+  position: relative;
+  padding: 10px 8px 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ── Zona topo: nome + botão remover ── */
+.slot-top {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
-  font-weight: bold;
+  min-height: 24px;
   position: relative;
+}
+
+/* ── Botão X de remover ── */
+.slot-remove-btn {
+  position: absolute;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #ddd;
+  background: #f5f5f5;
+  color: #aaa;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 10;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.slot-remove-btn:hover { background: #e74c3c; color: white; border-color: #e74c3c; }
+
+/* ── Zona meio: sprite ── */
+.slot-mid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+/* ── Zona baixo: tipos + formas + controles ── */
+.slot-bottom {
+  width: 100%;
+  display: flex;
   flex-direction: column;
-  padding: 12px 8px;
-  box-sizing: border-box;
+  align-items: center;
+  gap: 5px;
+  min-height: 80px;       /* garante que slots sem formas ocupam o mesmo espaço */
+  justify-content: flex-end;
 }
 
 .team-sprite {
@@ -130,11 +193,11 @@ body {
 .fire     { background: #EE8130; }
 .water    { background: #6390F0; }
 .grass    { background: #7AC74C; }
-.electric { background: #F7D02C; }
-.ice      { background: #96D9D6; }
+.electric { background: #F7D02C; color: black; }
+.ice      { background: #96D9D6; color: black; }
 .fighting { background: #C22E28; }
 .poison   { background: #A33EA1; }
-.ground   { background: #E2BF65; }
+.ground   { background: #E2BF65; color: black; }
 .flying   { background: #A98FF3; }
 .psychic  { background: #F95587; }
 .bug      { background: #A6B91A; }
@@ -142,7 +205,7 @@ body {
 .ghost    { background: #735797; }
 .dragon   { background: #6F35FC; }
 .dark     { background: #705746; }
-.steel    { background: #B7B7CE; }
+.steel    { background: #B7B7CE; color: black; }
 .fairy    { background: #D685AD; }
 .normal   { background: #A8A77A; }
 
@@ -274,6 +337,7 @@ body {
   margin-bottom: 20px;
 }
 
+.analysis-section { }
 .analysis-hint { font-size: 12px; color: #888; margin: 0 0 12px; }
 
 .analysis-types {
@@ -334,7 +398,7 @@ body {
 /* ── Pokémon card grid ── */
 .pokemon-list {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 15px;
 }
 .pokemon-card {

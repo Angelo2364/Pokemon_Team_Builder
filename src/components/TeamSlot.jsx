@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { TYPE_CHART, TYPE_ABBR, TYPE_COLORS, DARK_TEXT_TYPES, GAME_GROUPS, GAME_VERSION_GROUPS } from "../data/generations";
 
 // ── Shared util ──────────────────────────────────────────────────────────────
+function formatName(name) {
+  return name.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
 export function computeWeaknesses(types) {
   const ALL_ATK = [
     "normal","fire","water","electric","grass","ice","fighting","poison",
@@ -394,84 +397,106 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
     } catch(e) { console.error(e); }
   }
 
-  if (!pokemon) return <div className="team-slot"><span>Empty</span></div>;
+  if (!pokemon) return (
+    <div className="team-slot-wrapper" style={{ background: "#ddd" }}>
+      <div className="team-slot" style={{ justifyContent:"center", cursor:"default" }}>
+        <span style={{ fontSize: 28, color: "#bbb", fontWeight: 300 }}>+</span>
+      </div>
+    </div>
+  );
 
   const isAlternateForm = pokemon.isBaseForm === false;
 
-  return (
-    <div className="team-slot" onClick={() => removePokemon(index)}>
-      <img src={pokemon.isShiny ? pokemon.shinySprite : pokemon.sprite}
-        alt={pokemon.name} className="team-sprite" title={pokemon.name}/>
+  // Wrapper sempre com padding fixo — gradient pra 2 tipos, cor sólida pra 1
+  const typeColors = pokemon.types.map(t => TYPE_COLORS[t] || "#ccc");
+  const wrapperBg = typeColors.length >= 2
+    ? `linear-gradient(to right, ${typeColors[0]} 50%, ${typeColors[1]} 50%)`
+    : typeColors[0];
 
-      <div className="pokemon-types">
-        {pokemon.types.map(t => (
-          <span key={t} className={`type-badge ${t}`}>{t}</span>
-        ))}
+  return (
+    <div className="team-slot-wrapper" style={{ background: wrapperBg }}>
+    <div className="team-slot">
+
+      {/* ── TOPO: botão remover (esquerda) + nome (centro) ── */}
+      <div className="slot-top">
+        <button className="slot-remove-btn" title="Remover"
+          onClick={e => { e.stopPropagation(); removePokemon(index); }}>
+          ✕
+        </button>
+        <span className="slot-pokemon-name">{formatName(pokemon.name)}</span>
       </div>
 
-      {/* Alternate forms / Megas / Gigantamax */}
-      {forms && forms.length > 0 && (
-        <div className="forms-row" onClick={e => e.stopPropagation()}>
-          <span style={{fontSize:10,color:"#888",marginBottom:2}}>Formas:</span>
-          {forms.slice(0, 4).map(f => (
-            <button key={f.pokemon.name} className="form-btn"
-              onClick={() => switchFormKeepingBase(f.pokemon.name, false)}>
-              {f.pokemon.name
-                .replace((pokemon.baseFormName || pokemon.name).toLowerCase() + "-", "")
-                .replace(/-/g, " ")}
-            </button>
+      {/* ── MEIO: sprite ── */}
+      <div className="slot-mid">
+        <img src={pokemon.isShiny ? pokemon.shinySprite : pokemon.sprite}
+          alt={pokemon.name} className="team-sprite" title={pokemon.name}/>
+      </div>
+
+      {/* ── BAIXO: tipos + formas + controles ── */}
+      <div className="slot-bottom">
+        <div className="pokemon-types">
+          {pokemon.types.map(t => (
+            <span key={t} className={`type-badge ${t}`}>{t}</span>
           ))}
         </div>
-      )}
 
-      {/* Voltar à forma base */}
-      {isAlternateForm && pokemon.baseFormName && (
-        <div className="forms-row" onClick={e => e.stopPropagation()}>
-          <button
-            className="form-btn"
-            style={{ background:"#fff0f0", borderColor:"#e74c3c", color:"#c0392b", fontWeight:"bold" }}
-            onClick={() => switchFormKeepingBase(pokemon.baseFormName, true)}>
-            ↩ Forma base
+        {/* Formas alternativas */}
+        {forms && forms.length > 0 && (
+          <div className="forms-row" onClick={e => e.stopPropagation()}>
+            <span style={{fontSize:10,color:"#888"}}>Formas:</span>
+            {forms.slice(0, 4).map(f => (
+              <button key={f.pokemon.name} className="form-btn"
+                onClick={() => switchFormKeepingBase(f.pokemon.name, false)}>
+                {f.pokemon.name
+                  .replace((pokemon.baseFormName || pokemon.name).toLowerCase() + "-", "")
+                  .replace(/-/g, " ")}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Voltar à forma base */}
+        {isAlternateForm && pokemon.baseFormName && (
+          <div className="forms-row" onClick={e => e.stopPropagation()}>
+            <button className="form-btn"
+              style={{ background:"#fff0f0", borderColor:"#e74c3c", color:"#c0392b", fontWeight:"bold" }}
+              onClick={() => switchFormKeepingBase(pokemon.baseFormName, true)}>
+              ↩ Forma base
+            </button>
+          </div>
+        )}
+
+        <div className="pokemon-controls">
+          <select value={pokemon.selectedAbility}
+            onClick={e => e.stopPropagation()}
+            onChange={e => {
+              const t = [...team];
+              t[index] = { ...pokemon, selectedAbility: e.target.value };
+              setTeam(t);
+            }}
+            className="slot-ability-select">
+            {pokemon.abilities.map(a => <option key={a} value={a}>{formatName(a)}</option>)}
+          </select>
+
+          <button title={pokemon.isShiny ? "Shiny ativado" : "Ativar shiny"}
+            className={`slot-icon-btn ${pokemon.isShiny ? "slot-icon-btn--active" : ""}`}
+            onClick={e => {
+              e.stopPropagation();
+              const t = [...team];
+              t[index] = { ...pokemon, isShiny: !pokemon.isShiny };
+              setTeam(t);
+            }}>
+            ✦
+          </button>
+
+          <button className={`slot-detail-btn ${isOpen ? "slot-detail-btn--open" : ""}`}
+            onClick={e => {
+              e.stopPropagation();
+              setDetailsPokemon(isOpen ? -1 : index);
+            }}>
+            {isOpen ? "✕ Fechar" : "Detalhes"}
           </button>
         </div>
-      )}
-
-      <div className="pokemon-controls">
-        {/* Select de habilidade */}
-        <select
-          value={pokemon.selectedAbility}
-          onClick={e => e.stopPropagation()}
-          onChange={e => {
-            const t = [...team];
-            t[index] = { ...pokemon, selectedAbility: e.target.value };
-            setTeam(t);
-          }}
-          className="slot-ability-select">
-          {pokemon.abilities.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-
-        {/* Botão shiny */}
-        <button
-          title={pokemon.isShiny ? "Shiny ativado" : "Ativar shiny"}
-          className={`slot-icon-btn ${pokemon.isShiny ? "slot-icon-btn--active" : ""}`}
-          onClick={e => {
-            e.stopPropagation();
-            const t = [...team];
-            t[index] = { ...pokemon, isShiny: !pokemon.isShiny };
-            setTeam(t);
-          }}>
-          ✦
-        </button>
-
-        {/* Botão detalhes */}
-        <button
-          className={`slot-detail-btn ${isOpen ? "slot-detail-btn--open" : ""}`}
-          onClick={e => {
-            e.stopPropagation();
-            setDetailsPokemon(isOpen ? -1 : index);
-          }}>
-          {isOpen ? "✕ Fechar" : "Detalhes"}
-        </button>
       </div>
 
       {isOpen && (
@@ -507,6 +532,7 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
           {activeTab==="stab" && <STABPanel types={pokemon.types}/>}
         </div>
       )}
+    </div>
     </div>
   );
 }
