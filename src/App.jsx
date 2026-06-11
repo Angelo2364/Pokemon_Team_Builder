@@ -289,7 +289,34 @@ export default function App() {
       name: section.name,
       pokemon: applySecondaryFilters(
         section.pokemon
-          .map(name => pokemonList.find(p => p.name === name))
+          .map(entry => {
+            // entry pode ser:
+            //   "ninetales"  → Pokémon normal
+            //   { name: "ninetales-alola", base: "ninetales" }
+            //     → forma regional: usa o sprite da forma mas o URL do base pra adicionar ao time
+            //       o campo base aponta pro Pokémon canônico que existe no pokemonList
+            if (typeof entry === "string") {
+              return pokemonList.find(p => p.name === entry) || null;
+            }
+            // objeto com forma regional
+            const baseEntry = pokemonList.find(p => p.name === entry.base);
+            if (!baseEntry) return null;
+            // ID da forma: extraído do slug via mapeamento simples
+            // O sprite da forma fica em sprites/pokemon/{id}.png onde id > 10000
+            // Mas como não temos o ID sem fetch, usamos a URL da PokeAPI pra montar
+            const formUrl = `https://pokeapi.co/api/v2/pokemon/${entry.name}/`;
+            // Sprite: tentamos montar via slug conhecido
+            // PokeAPI sprites para formas: github/PokeAPI/sprites/pokemon/other/official-artwork/
+            // Mais simples: montar URL de fetch igual ao base mas com nome diferente
+            return {
+              ...baseEntry,
+              name: entry.name,
+              // sprite temporário — será atualizado no addPokemon via fetch
+              sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.spriteId || baseEntry.id}.png`,
+              url: formUrl,
+              displayName: entry.display || entry.name,
+            };
+          })
           .filter(Boolean)
       ),
     })).filter(s => s.pokemon.length > 0);
@@ -334,6 +361,9 @@ export default function App() {
       selectedAbility: d.abilities[0]?.ability?.name ?? "",
       stats: d.stats, moves: d.moves, selectedMoves: [],
       baseFormName: d.name, isBaseForm: true,
+      hiddenAbilities: new Set(
+        d.abilities.filter(a => a.is_hidden).map(a => a.ability.name)
+      ),
     };
     setTeam(t);
   }
@@ -527,7 +557,7 @@ export default function App() {
               </h3>
               <div className="pokemon-list">
                 {section.pokemon.map(pokemon => (
-                  <div key={pokemon.id} className="pokemon-card" data-name={formatName(pokemon.name)} onClick={() => addPokemon(pokemon)}>
+                  <div key={pokemon.id + pokemon.name} className="pokemon-card" data-name={formatName(pokemon.displayName || pokemon.name)} onClick={() => addPokemon(pokemon)}>
                     <img src={pokemon.sprite} alt={pokemon.name} className="pokemon-list-sprite" />
                   </div>
                 ))}

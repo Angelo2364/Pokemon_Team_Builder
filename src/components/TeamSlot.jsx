@@ -172,18 +172,28 @@ function LearnBadge({ method, level }) {
   return null;
 }
 
+// ── Cache global de detalhes de golpes — persiste entre renders e rerenders ──
+const MOVE_CACHE = {};
+const MOVE_FETCHING = new Set(); // evita requisições duplicadas em voo
+
 // ── MovesPanel ───────────────────────────────────────────────────────────────
 const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯︎" };
 
 function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
   const [moveSearch, setMoveSearch] = useState("");
-  const [moveDetails, setMoveDetails] = useState({}); // name -> { type, damageClass, power, desc, accuracy }
-  const [expandedMove, setExpandedMove] = useState(null); // nome do golpe com desc aberta
+  const [, forceUpdate] = useState(0); // usado pra re-render após cache popular
+  const [expandedMove, setExpandedMove] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(filterGame || "all");
   const [userOverrode, setUserOverrode] = useState(false);
+  const [filterDmgClass, setFilterDmgClass] = useState("all");
+  const [sortPower, setSortPower] = useState(0); // 0=padrão, 1=desc, 2=asc
+
   useEffect(() => {
     if (!userOverrode) setSelectedVersion(filterGame || "all");
   }, [filterGame]);
+
+  // Força fetch na montagem do componente
+  useEffect(() => { forceUpdate(n => n + 1); }, []);
 
   const selectedMoves = pokemon.selectedMoves || [];
 
@@ -234,36 +244,49 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
       .map(([name, info]) => ({ name, ...info }));
   })();
 
-  // Filter by search query
-  const filtered = processedMoves.filter(m =>
+  // Filter by search query + damage class
+  let filtered = processedMoves.filter(m =>
     m.name.toLowerCase().includes(moveSearch.toLowerCase())
   );
+  if (filterDmgClass !== "all") {
+    filtered = filtered.filter(m => MOVE_CACHE[m.name]?.damageClass === filterDmgClass);
+  }
+  if (sortPower === 1) {
+    filtered = [...filtered].sort((a, b) =>
+      (MOVE_CACHE[b.name]?.power ?? -1) - (MOVE_CACHE[a.name]?.power ?? -1)
+    );
+  } else if (sortPower === 2) {
+    filtered = [...filtered].sort((a, b) =>
+      (MOVE_CACHE[a.name]?.power ?? 9999) - (MOVE_CACHE[b.name]?.power ?? 9999)
+    );
+  }
 
-  // Fetch detalhes dos golpes visíveis
+  // Fetch detalhes dos golpes visíveis — cache global evita refetch
   useEffect(() => {
-    let cancelled = false;
-    const visible = filtered.slice(0, 80);
-    const toFetch = visible.filter(m => !moveDetails[m.name]);
+    const toFetch = filtered.slice(0, 80).filter(m => !MOVE_CACHE[m.name] && !MOVE_FETCHING.has(m.name));
     if (!toFetch.length) return;
+
+    toFetch.forEach(m => MOVE_FETCHING.add(m.name));
+
     Promise.all(toFetch.map(async ({ name }) => {
       try {
         const r = await fetch(`https://pokeapi.co/api/v2/move/${name}/`);
         const d = await r.json();
         const descEntry = d.flavor_text_entries?.find(e => e.language.name === "en");
-        return [name, {
+        MOVE_CACHE[name] = {
           type: d.type?.name || "normal",
           damageClass: d.damage_class?.name || "status",
           power: d.power ?? null,
           accuracy: d.accuracy ?? null,
           desc: descEntry?.flavor_text?.replace(/\f/g, " ") || "",
-        }];
-      } catch { return [name, { type: "normal", damageClass: "status", power: null, accuracy: null, desc: "" }]; }
-    })).then(results => {
-      if (cancelled) return;
-      setMoveDetails(prev => { const n = { ...prev }; results.forEach(([k, v]) => { n[k] = v; }); return n; });
-    });
-    return () => { cancelled = true; };
-  }, [moveSearch, selectedVersion, pokemon.id]);
+        };
+      } catch {
+        MOVE_CACHE[name] = { type: "normal", damageClass: "status", power: null, accuracy: null, desc: "" };
+      } finally {
+        MOVE_FETCHING.delete(name);
+      }
+    })).then(() => forceUpdate(n => n + 1));
+  }, [moveSearch, selectedVersion, pokemon.id, filterDmgClass, sortPower]);
 
   function toggleMove(name) {
     const cur = [...selectedMoves];
@@ -279,7 +302,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
       <div className="selected-moves">
         {[0, 1, 2, 3].map(i => {
           const mv = selectedMoves[i];
-          const det = mv ? moveDetails[mv] : null;
+          const det = mv ? MOVE_CACHE[mv] : null;
           const bg = det ? (TYPE_COLORS[det.type] || "#333") : null;
           const tc = det && DARK_TEXT_TYPES.has(det.type) ? "#333" : "#fff";
           return (
@@ -313,6 +336,39 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
         ))}
       </select>
 
+      {/* Filtros de damage class + ordenação por power */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 6, alignItems: "center" }}>
+        {/* Dropdown de categoria */}
+        <select
+          value={filterDmgClass}
+          onChange={e => { e.stopPropagation(); setFilterDmgClass(e.target.value); }}
+          onClick={e => e.stopPropagation()}
+          style={{
+            flex: 1, padding: "4px 6px", fontSize: 10, fontWeight: "bold",
+            border: "1px solid #ccc", borderRadius: 6, background: filterDmgClass !== "all" ? "#333" : "#f0f0f0",
+            color: filterDmgClass !== "all" ? "#fff" : "#555", cursor: "pointer",
+          }}>
+          <option value="all">Todos</option>
+          <option value="physical">✴ Físico</option>
+          <option value="special">𖦹 Especial</option>
+          <option value="status">☯ Status</option>
+        </select>
+
+        {/* Botão de ciclo de ordenação por power */}
+        <button
+          onClick={e => { e.stopPropagation(); setSortPower(p => (p + 1) % 3); }}
+          title={["Ordenar por power", "Power: maior primeiro", "Power: menor primeiro"][sortPower]}
+          style={{
+            padding: "4px 9px", fontSize: 10, fontWeight: "bold", cursor: "pointer",
+            border: "1px solid #ccc", borderRadius: 6,
+            background: sortPower > 0 ? "#333" : "#f0f0f0",
+            color: sortPower > 0 ? "#fff" : "#555",
+            flexShrink: 0, transition: "all 0.12s",
+          }}>
+          {sortPower === 0 ? "Pwr ↕" : sortPower === 1 ? "Pwr ↓" : "Pwr ↑"}
+        </button>
+      </div>
+
       {/* Search */}
       <input className="move-search" type="text" placeholder="Buscar golpe..."
         value={moveSearch} onChange={e => setMoveSearch(e.target.value)}
@@ -327,7 +383,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
         )}
         {filtered.slice(0, 80).map(m => {
           const active = selectedMoves.includes(m.name);
-          const det = moveDetails[m.name];
+          const det = MOVE_CACHE[m.name];
           const mt = det?.type;
           const bg = mt ? (TYPE_COLORS[mt] || "#eee") : "#f5f5f5";
           const isExpanded = expandedMove === m.name;
@@ -486,6 +542,9 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
         baseFormName: isBase ? pokemonName : pokemon.baseFormName,
         baseFormId: isBase ? data.id : (pokemon.baseFormId || pokemon.id),
         isBaseForm: isBase,
+        hiddenAbilities: new Set(
+          data.abilities.filter(a => a.is_hidden).map(a => a.ability.name)
+        ),
       };
       setTeam(t);
     } catch (e) { console.error(e); }
@@ -561,6 +620,10 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
           )}
 
           <div className="pokemon-controls">
+          <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
+            {pokemon.hiddenAbilities?.has(pokemon.selectedAbility) && (
+              <span className="hidden-ability-badge" title="Hidden Ability">H</span>
+            )}
             <select value={pokemon.selectedAbility}
               onClick={e => e.stopPropagation()}
               onChange={e => {
@@ -569,8 +632,13 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
                 setTeam(t);
               }}
               className="slot-ability-select">
-              {pokemon.abilities.map(a => <option key={a} value={a}>{formatName(a)}</option>)}
+              {pokemon.abilities.map(a => (
+                <option key={a} value={a}>
+                  {formatName(a)}{pokemon.hiddenAbilities?.has(a) ? " (H)" : ""}
+                </option>
+              ))}
             </select>
+          </div>
 
             <button title={pokemon.isShiny ? "Shiny ativado" : "Ativar shiny"}
               className={`slot-icon-btn ${pokemon.isShiny ? "slot-icon-btn--active" : ""}`}

@@ -575,3 +575,54 @@ body {
   margin: auto;
   padding: 16px 0;
 }
+
+/* ── Hidden Ability badge ── */
+.slot-ability-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.hidden-ability-badge {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  background: #8e44ad;
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slot-ability-wrapper .slot-ability-select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Slot compacto no sticky ── */
+/* Quando o time está sticky, o slot-bottom (tipos, formas, controles)
+   fica escondido e só aparece no hover */
+.team-container--sticky .slot-bottom {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.2s ease, opacity 0.15s ease;
+  min-height: 0;
+}
+.team-container--sticky .team-slot:hover .slot-bottom {
+  max-height: 200px;
+  opacity: 1;
+}
+/* No sticky, o slot fica menor por padrão */
+.team-container--sticky .team-slot {
+  min-height: 180px;
+  transition: min-height 0.2s ease;
+}
+.team-container--sticky .team-slot:hover {
+  min-height: 270px;
+  z-index: 10;
+}
