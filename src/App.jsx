@@ -385,6 +385,7 @@ export default function App() {
   // ── Setup screen ──────────────────────────────────────────────────────────
   if (!started) {
     return (
+
       <div className="setup-screen">
         <h1>Pokémon Team Builder</h1>
         <div className="setup-card">
@@ -399,6 +400,15 @@ export default function App() {
           </p>
           <button className="start-btn" onClick={startGame}>Começar →</button>
         </div>
+        <p style={{
+          marginTop: 1,
+          fontSize: 12,
+          color: "#888",
+          textAlign: "center"
+        }}
+        >
+          V0.8 - 11 - 06 - 2026
+        </p>
       </div>
     );
   }
