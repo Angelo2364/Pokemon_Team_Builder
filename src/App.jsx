@@ -7,6 +7,9 @@ import { STAGE1, STAGE2, FINAL } from "./data/evostages";
 import "./App.css";
 
 
+// ── Cache global de dados de Pokémon — evita re-fetch ao re-adicionar ────────
+const POKEMON_CACHE = {};
+
 // Formata nomes: troca hífens por espaços e capitaliza cada palavra
 function formatName(name) {
   return name.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -111,6 +114,7 @@ export default function App() {
   const [moveFilteredIds, setMoveFilteredIds] = useState(null);
   const [abilityFilteredIds, setAbilityFilteredIds] = useState(null);
   const [legendaryIds, setLegendaryIds] = useState(null);
+  const [highlightSlots, setHighlightSlots] = useState(null);
 
   const [moveSearchResults, setMoveSearchResults] = useState([]);
   const [abilitySearchResults, setAbilitySearchResults] = useState([]);
@@ -124,6 +128,8 @@ export default function App() {
   const [detailsPokemon, setDetailsPokemon] = useState(-1);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [stickyTeam, setStickyTeam] = useState(false);
+
+  const [recentlyAdded, setRecentlyAdded] = useState(null);
 
   const teamSentinelRef = useRef(null);
 
@@ -254,7 +260,7 @@ export default function App() {
   }, [activeGroup]);
 
   // Função auxiliar que aplica todos os filtros secundários a uma lista
-  function applySecondaryFilters(list) {
+  const applySecondaryFilters = useCallback((list) => {
     if (filterGen !== "all") list = list.filter(p => p.genId === Number(filterGen));
     if (search.trim()) list = list.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
     if (filterType !== "all" && typeFilteredIds) list = list.filter(p => typeFilteredIds.has(p.id));
@@ -268,17 +274,8 @@ export default function App() {
     if (excl && filterVersion === "a") list = list.filter(p => exclusiveNameSets.a.has(p.name));
     if (excl && filterVersion === "b") list = list.filter(p => exclusiveNameSets.b.has(p.name));
     return list;
-  }
-
-  // visibleList — usado só no grid normal (sem gamedex e sem seções)
-  const visibleList = useMemo(() => {
-    let list = pokemonList;
-    if (activeGenIds) list = list.filter(p => activeGenIds.has(p.genId));
-    if (filterGen !== "all") list = list.filter(p => p.genId === Number(filterGen));
-    return applySecondaryFilters(list);
-  }, [pokemonList, activeGenIds, filterGen, search, filterType, typeFilteredIds,
-    moveFilteredIds, abilityFilteredIds, hideLegendary, legendaryIds,
-    filterStage, filterVersion, activeGroup, exclusiveNameSets]);
+  }, [filterGen, search, filterType, typeFilteredIds, moveFilteredIds, abilityFilteredIds,
+    hideLegendary, legendaryIds, filterStage, filterVersion, activeGroup, exclusiveNameSets]);
 
   // gameDexSections — seções do gamedex pra jogos específicos
   const gameDexSections = useMemo(() => {
@@ -320,9 +317,7 @@ export default function App() {
           .filter(Boolean)
       ),
     })).filter(s => s.pokemon.length > 0);
-  }, [filterGame, filterGen, pokemonList, search, filterType, typeFilteredIds, moveFilteredIds,
-    abilityFilteredIds, hideLegendary, legendaryIds, filterStage,
-    filterVersion, activeGroup, exclusiveNameSets]);
+  }, [filterGame, pokemonList, applySecondaryFilters]);
 
   // allGamesSections — seções por geração quando filterGame === "all"
   // Cada geração vira uma seção (Kanto, Johto, Hoenn...)
@@ -337,18 +332,23 @@ export default function App() {
         ),
       }))
       .filter(s => s.pokemon.length > 0);
-  }, [filterGame, filterGen, pokemonList, search, filterType, typeFilteredIds,
-    moveFilteredIds, abilityFilteredIds, hideLegendary, legendaryIds,
-    filterStage, filterVersion, activeGroup, exclusiveNameSets]);
+  }, [filterGame, filterGen, pokemonList, applySecondaryFilters]);
 
   async function addPokemon(pokemon) {
-    // Fecha painel de detalhes se estiver aberto (o handleClickOutside já cuida,
-    // mas garantimos aqui também pra evitar o painel ficar "fantasma")
+    setRecentlyAdded(pokemon.name);
+    setTimeout(() => setRecentlyAdded(null), 400);
+
     if (detailsPokemon !== -1) setDetailsPokemon(-1);
     const firstEmpty = team.findIndex(s => s === null);
     if (firstEmpty === -1) return;
-    const r = await fetch(pokemon.url);
-    const d = await r.json();
+
+    // Usa cache pra evitar re-fetch do mesmo Pokémon
+    if (!POKEMON_CACHE[pokemon.url]) {
+      const r = await fetch(pokemon.url);
+      POKEMON_CACHE[pokemon.url] = await r.json();
+    }
+    const d = POKEMON_CACHE[pokemon.url];
+
     const t = [...team];
     t[firstEmpty] = {
       id: d.id,
@@ -385,7 +385,6 @@ export default function App() {
   // ── Setup screen ──────────────────────────────────────────────────────────
   if (!started) {
     return (
-
       <div className="setup-screen">
         <h1>Pokémon Team Builder</h1>
         <div className="setup-card">
@@ -400,15 +399,6 @@ export default function App() {
           </p>
           <button className="start-btn" onClick={startGame}>Começar →</button>
         </div>
-        <p style={{
-          marginTop: 1,
-          fontSize: 12,
-          color: "#888",
-          textAlign: "center"
-        }}
-        >
-          V0.8 - 11 - 06 - 2026
-        </p>
       </div>
     );
   }
@@ -440,14 +430,20 @@ export default function App() {
       </div>
 
       <div className={`team-container${stickyTeam ? " team-container--sticky" : ""}`}
+        style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 20 }}
         onClick={e => e.stopPropagation()}>
-        {team.map((pokemon, index) => (
-          <TeamSlot key={index} pokemon={pokemon} index={index}
-            team={team} setTeam={setTeam}
-            detailsPokemon={detailsPokemon} setDetailsPokemon={setDetailsPokemon}
-            removePokemon={removePokemon} filterGame={filterGame}
-            panelLeft={index >= 3} />
-        ))}
+        {team.map((pokemon, index) => {
+          const dimmed = highlightSlots !== null && pokemon && !highlightSlots.has(index);
+          return (
+            <div key={index} style={{ transition: "opacity 0.2s", opacity: dimmed ? 0.2 : 1 }}>
+              <TeamSlot pokemon={pokemon} index={index}
+                team={team} setTeam={setTeam}
+                detailsPokemon={detailsPokemon} setDetailsPokemon={setDetailsPokemon}
+                removePokemon={removePokemon} filterGame={filterGame}
+                panelLeft={index >= 3} />
+            </div>
+          );
+        })}
       </div>
 
       {/* Sentinel invisível — fica logo ABAIXO do time.
@@ -465,7 +461,7 @@ export default function App() {
 
       {showAnalysis && hasTeam && (
         <div onClick={e => e.stopPropagation()}>
-          <TeamAnalysis team={team} />
+          <TeamAnalysis team={team} onHover={setHighlightSlots} />
         </div>
       )}
 
@@ -567,9 +563,20 @@ export default function App() {
               </h3>
               <div className="pokemon-list">
                 {section.pokemon.map(pokemon => (
-                  <div key={pokemon.id + pokemon.name} className="pokemon-card" data-name={formatName(pokemon.displayName || pokemon.name)} onClick={() => addPokemon(pokemon)}>
-                    <img src={pokemon.sprite} alt={pokemon.name} className="pokemon-list-sprite" />
-                  </div>
+               <div
+  key={pokemon.id + pokemon.name}
+  className={`pokemon-card ${
+    recentlyAdded === pokemon.name ? "pokemon-added" : ""
+  }`}
+  data-name={formatName(pokemon.displayName || pokemon.name)}
+  onClick={() => addPokemon(pokemon)}
+>
+  <img
+    src={pokemon.sprite}
+    alt={pokemon.name}
+    className="pokemon-list-sprite"
+  />
+</div>
                 ))}
               </div>
             </div>

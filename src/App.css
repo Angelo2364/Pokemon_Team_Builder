@@ -626,3 +626,36 @@ body {
   min-height: 270px;
   z-index: 10;
 }
+
+@keyframes pokemonEnter {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.8) rotate(-8deg); }
+  25%  { transform: rotate(8deg); }
+  50%  { transform: rotate(-5deg); }
+  75%  { transform: rotate(3deg); }
+  100% { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+
+.team-sprite.animate-add {
+  animation: pokemonEnter 0.5s ease-out;
+  transform-origin: bottom center;
+}
+
+@keyframes pokemonAdded {
+  0% {
+    background: inherit;
+  }
+
+  50% {
+    background: #777777;
+    transform: scale(1.05);
+  }
+
+  100% {
+    background: inherit;
+    transform: scale(1);
+  }
+}
+
+.pokemon-added {
+  animation: pokemonAdded 0.4s ease;
+}

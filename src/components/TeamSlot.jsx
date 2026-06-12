@@ -41,19 +41,58 @@ export function TypePill({ type, size = "sm" }) {
   return <span className={`type-badge ${type}`}>{type}</span>;
 }
 
+// ── Modificadores de fraqueza por habilidade ─────────────────────────────────
+const ABILITY_IMMUNITY = {
+  "flash-fire":       { fire: 0 },
+  "well-baked-body":  { fire: 0 },
+  "water-absorb":     { water: 0 },
+  "storm-drain":      { water: 0 },
+  "dry-skin":         { water: 0, fire: 1.25 },
+  "volt-absorb":      { electric: 0 },
+  "motor-drive":      { electric: 0 },
+  "lightning-rod":    { electric: 0 },
+  "levitate":         { ground: 0 },
+  "sap-sipper":       { grass: 0 },
+  "earth-eater":      { ground: 0 },
+  "thick-fat":        { fire: 0.5, ice: 0.5 },
+  "heatproof":        { fire: 0.5 },
+  "water-bubble":     { fire: 0.5 },
+  "purifying-salt":   { ghost: 0.5 },
+  "fluffy":           { fire: 2 },
+};
+
 // ── WeaknessPanel ────────────────────────────────────────────────────────────
-export function WeaknessPanel({ types }) {
-  const mult = computeWeaknesses(types);
+export function WeaknessPanel({ types, ability }) {
+  const base = computeWeaknesses(types);
+
+  // Aplica modificadores da habilidade por cima das fraquezas de tipo
+  const mult = { ...base };
+  const abilityMods = ability ? (ABILITY_IMMUNITY[ability] || {}) : {};
+  Object.entries(abilityMods).forEach(([type, mod]) => {
+    if (mod === 0) {
+      mult[type] = 0;
+    } else {
+      mult[type] = (mult[type] ?? 1) * mod;
+    }
+  });
+
+  const abilityActive = Object.keys(abilityMods).length > 0;
+
   const sections = [
-    { label: "×4 Fraco", filter: v => v === 4, color: "#c0392b" },
-    { label: "×2 Fraco", filter: v => v === 2, color: "#e74c3c" },
-    { label: "½ Resiste", filter: v => v === 0.5, color: "#27ae60" },
-    { label: "¼ Resiste", filter: v => v === 0.25, color: "#16a085" },
-    { label: "Imune", filter: v => v === 0, color: "#2980b9" },
+    { label: "×4 Fraco",   filter: v => v >= 4,              color: "#c0392b" },
+    { label: "×2 Fraco",  filter: v => v >= 2 && v < 4,    color: "#e74c3c" },
+    { label: "×1 Fraco",  filter: v => v > 1 && v < 2,     color: "#e67e22" },
+    { label: "½ Resiste",  filter: v => v > 0 && v <= 0.5,  color: "#27ae60" },
+    { label: "Imune",      filter: v => v === 0,             color: "#2980b9" },
   ];
   const hasAny = sections.some(({ filter }) => Object.values(mult).some(filter));
   return (
     <div className="weakness-panel">
+      {abilityActive && (
+        <p style={{ fontSize: 10, color: "#8e44ad", margin: "0 0 8px", fontWeight: "bold" }}>
+          ✦ {formatName(ability)} aplicada
+        </p>
+      )}
       {!hasAny && <p style={{ fontSize: 12, color: "#888" }}>Sem fraquezas relevantes.</p>}
       {sections.map(({ label, filter, color }) => {
         const entries = Object.entries(mult).filter(([, v]) => filter(v));
@@ -62,7 +101,11 @@ export function WeaknessPanel({ types }) {
           <div key={label} style={{ marginBottom: 8 }}>
             <span style={{ fontSize: 11, fontWeight: "bold", color }}>{label}</span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-              {entries.map(([t]) => <span key={t} className={`type-badge ${t}`}>{t}</span>)}
+              {entries.map(([t, v]) => (
+                <span key={t} className={`type-badge ${t}`} title={`×${v}`}>
+                  {t}{![0, 0.25, 0.5, 1, 2, 4].includes(v) ? ` ×${+v.toFixed(2)}` : ""}
+                </span>
+              ))}
             </div>
           </div>
         );
@@ -175,6 +218,10 @@ function LearnBadge({ method, level }) {
 // ── Cache global de detalhes de golpes — persiste entre renders e rerenders ──
 const MOVE_CACHE = {};
 const MOVE_FETCHING = new Set(); // evita requisições duplicadas em voo
+
+// ── Cache global de habilidades e formas ─────────────────────────────────────
+const ABILITY_CACHE = {};
+const FORM_CACHE = {};
 
 // ── MovesPanel ───────────────────────────────────────────────────────────────
 const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯︎" };
@@ -447,11 +494,17 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
 
 // ── AbilityDesc — seção de descrição de habilidade ──────────────────────────
 function AbilityDesc({ abilityName }) {
-  const [desc, setDesc] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [desc, setDesc] = useState(ABILITY_CACHE[abilityName] ?? null);
+  const [loading, setLoading] = useState(!ABILITY_CACHE[abilityName] && !!abilityName);
 
   useEffect(() => {
     if (!abilityName) return;
+    // Cache hit — sem fetch
+    if (ABILITY_CACHE[abilityName] !== undefined) {
+      setDesc(ABILITY_CACHE[abilityName]);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setDesc(null);
     setLoading(true);
@@ -461,10 +514,18 @@ function AbilityDesc({ abilityName }) {
         if (cancelled) return;
         const entry = d.flavor_text_entries?.find(e => e.language.name === "en");
         const effect = d.effect_entries?.find(e => e.language.name === "en");
-        setDesc(effect?.short_effect || entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.");
+        const result = effect?.short_effect || entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.";
+        ABILITY_CACHE[abilityName] = result;
+        setDesc(result);
         setLoading(false);
       })
-      .catch(() => { if (!cancelled) { setDesc("Erro ao carregar."); setLoading(false); } });
+      .catch(() => {
+        if (!cancelled) {
+          ABILITY_CACHE[abilityName] = "Erro ao carregar.";
+          setDesc("Erro ao carregar.");
+          setLoading(false);
+        }
+      });
     return () => { cancelled = true; };
   }, [abilityName]);
 
@@ -483,12 +544,43 @@ function AbilityDesc({ abilityName }) {
     </div>
   );
 }
-function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPokemon, removePokemon, filterGame, panelLeft }) {
+function TeamSlot({
+  pokemon,
+  index,
+  team,
+  setTeam,
+  detailsPokemon,
+  setDetailsPokemon,
+  removePokemon,
+  filterGame,
+  panelLeft,
+}) {
   const [activeTab, setActiveTab] = useState("stats");
   const [forms, setForms] = useState(null);
-  const panelRef = useRef(null);
+  const [animate, setAnimate] = useState(false);
 
+  const panelRef = useRef(null);
   const isOpen = detailsPokemon === index;
+
+  const prevWasEmpty = useRef(true); // começa true: slot começa vazio
+
+  useEffect(() => {
+    const nowHasPokemon = !!pokemon?.id;
+    const wasEmpty = prevWasEmpty.current;
+
+    // Anima só quando o slot estava vazio e agora tem um Pokémon
+    // Troca de forma: slot nunca fica vazio, então wasEmpty === false → não anima
+    if (wasEmpty && nowHasPokemon) {
+      setAnimate(true);
+      const timer = setTimeout(() => setAnimate(false), 500);
+      prevWasEmpty.current = false;
+      return () => clearTimeout(timer);
+    }
+
+    prevWasEmpty.current = !nowHasPokemon;
+  }, [pokemon?.id]);
+
+
 
   // Fecha ao clicar fora do painel — listener ativo só quando o painel está aberto
   useEffect(() => {
@@ -524,8 +616,11 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
 
   async function switchFormKeepingBase(pokemonName, isBase = false) {
     try {
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}/`);
-      const data = await res.json();
+      if (!FORM_CACHE[pokemonName]) {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}/`);
+        FORM_CACHE[pokemonName] = await res.json();
+      }
+      const data = FORM_CACHE[pokemonName];
       const t = [...team];
       t[index] = {
         ...pokemon,
@@ -533,6 +628,8 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
         name: data.name.charAt(0).toUpperCase() + data.name.slice(1),
         sprite: data.sprites.front_default,
         shinySprite: data.sprites.front_shiny,
+        animatedSprite: data.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_default || null,
+        animatedShinySprite: data.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_shiny || null,
         types: data.types.map(x => x.type.name),
         abilities: data.abilities.map(a => a.ability.name),
         selectedAbility: data.abilities[0]?.ability?.name ?? "",
@@ -580,10 +677,12 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
         </div>
 
         {/* ── MEIO: sprite ── */}
-        <div className="slot-mid">
-          <img src={pokemon.isShiny ? pokemon.shinySprite : pokemon.sprite}
-            alt={pokemon.name} className="team-sprite" title={pokemon.name} />
-        </div>
+        <img
+          src={pokemon.isShiny ? pokemon.shinySprite : pokemon.sprite}
+          alt={pokemon.name}
+          className={`team-sprite ${animate ? "animate-add" : ""}`}
+          title={pokemon.name}
+        />
 
         {/* ── BAIXO: tipos + formas + controles ── */}
         <div className="slot-bottom">
@@ -620,25 +719,25 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
           )}
 
           <div className="pokemon-controls">
-          <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
-            {pokemon.hiddenAbilities?.has(pokemon.selectedAbility) && (
-              <span className="hidden-ability-badge" title="Hidden Ability">H</span>
-            )}
-            <select value={pokemon.selectedAbility}
-              onClick={e => e.stopPropagation()}
-              onChange={e => {
-                const t = [...team];
-                t[index] = { ...pokemon, selectedAbility: e.target.value };
-                setTeam(t);
-              }}
-              className="slot-ability-select">
-              {pokemon.abilities.map(a => (
-                <option key={a} value={a}>
-                  {formatName(a)}{pokemon.hiddenAbilities?.has(a) ? " (H)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
+              {pokemon.hiddenAbilities?.has(pokemon.selectedAbility) && (
+                <span className="hidden-ability-badge" title="Hidden Ability">H</span>
+              )}
+              <select value={pokemon.selectedAbility}
+                onClick={e => e.stopPropagation()}
+                onChange={e => {
+                  const t = [...team];
+                  t[index] = { ...pokemon, selectedAbility: e.target.value };
+                  setTeam(t);
+                }}
+                className="slot-ability-select">
+                {pokemon.abilities.map(a => (
+                  <option key={a} value={a}>
+                    {formatName(a)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <button title={pokemon.isShiny ? "Shiny ativado" : "Ativar shiny"}
               className={`slot-icon-btn ${pokemon.isShiny ? "slot-icon-btn--active" : ""}`}
@@ -695,7 +794,7 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
                 pokemon={pokemon} index={index} team={team} setTeam={setTeam}
                 filterGame={filterGame} />
             )}
-            {activeTab === "weak" && <WeaknessPanel types={pokemon.types} />}
+            {activeTab === "weak" && <WeaknessPanel types={pokemon.types} ability={pokemon.selectedAbility} />}
             {activeTab === "stab" && <STABPanel types={pokemon.types} />}
           </div>
         )}
@@ -706,33 +805,44 @@ function TeamSlot({ pokemon, index, team, setTeam, detailsPokemon, setDetailsPok
 
 // ── TeamMoveCard — golpes de um slot exibidos abaixo do time ─────────────────
 export function TeamMoveCard({ pokemon }) {
-  const [details, setDetails] = useState({});
+  const [, forceUpdate] = useState(0);
 
   const moves = pokemon?.selectedMoves || [];
 
   useEffect(() => {
     if (!moves.length) return;
-    let cancelled = false;
-    const toFetch = moves.filter(m => !details[m]);
+    const toFetch = moves.filter(m => !MOVE_CACHE[m] && !MOVE_FETCHING.has(m));
     if (!toFetch.length) return;
+
+    let cancelled = false;
+    toFetch.forEach(m => MOVE_FETCHING.add(m));
+
     Promise.all(toFetch.map(async name => {
       try {
         const r = await fetch(`https://pokeapi.co/api/v2/move/${name}/`);
         const d = await r.json();
+        const descEntry = d.flavor_text_entries?.find(e => e.language.name === "en");
         return [name, {
           type: d.type?.name || "normal",
           damageClass: d.damage_class?.name || "status",
+          power: d.power ?? null,
+          accuracy: d.accuracy ?? null,
+          desc: descEntry?.flavor_text?.replace(/\f/g, " ") || "",
         }];
-      } catch { return [name, { type: "normal", damageClass: "status" }]; }
+      } catch {
+        return [name, { type: "normal", damageClass: "status", power: null, accuracy: null, desc: "" }];
+      } finally {
+        MOVE_FETCHING.delete(name);
+      }
     })).then(results => {
       if (cancelled) return;
-      setDetails(prev => { const n = { ...prev }; results.forEach(([k, v]) => { n[k] = v; }); return n; });
+      results.forEach(([k, v]) => { MOVE_CACHE[k] = v; });
+      forceUpdate(n => n + 1);
     });
     return () => { cancelled = true; };
   }, [moves.join(",")]);
 
-  const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯" };
-
+  // Reutiliza o DAMAGE_CLASS_ICON definido no topo do arquivo
   if (!pokemon) return <div className="team-move-card team-move-card--empty" />;
 
   const hasMoves = moves.length > 0;
@@ -743,7 +853,7 @@ export function TeamMoveCard({ pokemon }) {
         <div className="team-move-grid">
           {[0, 1, 2, 3].map(i => {
             const mv = moves[i];
-            const det = mv ? details[mv] : null;
+            const det = mv ? MOVE_CACHE[mv] : null;
             const bg = det ? (TYPE_COLORS[det.type] || "#888") : null;
             const tc = det && DARK_TEXT_TYPES.has(det.type) ? "#333" : "#fff";
             return (
