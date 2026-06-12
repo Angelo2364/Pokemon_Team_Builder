@@ -4,6 +4,10 @@ Uma ferramenta web para montar equipes Pokémon, planejar jornadas em diferentes
 
 O projeto foi criado para resolver um problema que eu encontrava constantemente ao jogar Pokémon: descobrir quais Pokémon estão disponíveis em cada jogo, organizar equipes e comparar opções sem precisar abrir dezenas de abas diferentes.
 
+Link para o projeto, dê uma olhada e tente achar um bug =D
+
+pokemon-team-builder-pi.vercel.app
+
 ---
 
 ## ✨ Funcionalidades
