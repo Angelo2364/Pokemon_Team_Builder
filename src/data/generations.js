@@ -58,11 +58,13 @@ export const GAME_VERSION_GROUPS = {
   oras: ["omega-ruby-alpha-sapphire"],
   sm: ["sun-moon"],
   usum: ["ultra-sun-ultra-moon"],
+  lgpe: ["lets-go-pikachu-eevee"],
   swsh: ["sword-shield"],
   bdsp: ["brilliant-diamond-and-shining-pearl"],
   la: ["legends-arceus"],
   sv: ["scarlet-violet"],
   za: ["legends-z-a"],
+  letsgo: ["lets-go-pikachu-lets-go-eevee"],
 };
 
 export const generations = [
@@ -360,7 +362,7 @@ export const GAME_GROUPS = [
         "aron", "lairon", "aggron",
         "lileep", "cradily",
         "anorith", "armaldo",
-        "sawk",  
+        "sawk",
       ],
       bNames: [
         "spritzee", "aromatisse",
@@ -479,7 +481,7 @@ export const GAME_GROUPS = [
         "clauncher", "clawitzer",
         "tyrunt", "tyrantrum",
         "xerneas",
-        ],
+      ],
       bNames: [
         "sandshrew", "sandslash",
         "oranguru",
@@ -516,10 +518,10 @@ export const GAME_GROUPS = [
     exclusives: {
       a: "Sword", b: "Shield",
       aNames: [
-       "seedot", "nuzleaf", "shiftry", "basculin-red-striped", "flapple", "swirlix", "slurpuff", "farfetchd", "sirfetchd", "scraggy", "scrafty", "gothita", "gothorita", "gothitelle", "rufflet", "braviary", "mawile", "passimian", "turtonator", "solrock", "darumaka", "darmanitan-standard", "stonjourner", "deino", "zweilous", "hydreigon", "jangmo-o", "hakamo-o", "kommo-o", "zacian", "isle-of-armor-pokedex", "pinsir", "clauncher", "clawitzer", "crown-tundra-pokedex", "bagon", "shelgon", "salamence", "omanyte", "omastar", "other-pokemon", "ho-oh", "latios", "groudon", "dialga", "tornadus-incarnate", "reshiram", "xerneas", "solgaleo"
+        "seedot", "nuzleaf", "shiftry", "basculin-red-striped", "flapple", "swirlix", "slurpuff", "farfetchd", "sirfetchd", "scraggy", "scrafty", "gothita", "gothorita", "gothitelle", "rufflet", "braviary", "mawile", "passimian", "turtonator", "solrock", "darumaka", "darmanitan-standard", "stonjourner", "deino", "zweilous", "hydreigon", "jangmo-o", "hakamo-o", "kommo-o", "zacian", "isle-of-armor-pokedex", "pinsir", "clauncher", "clawitzer", "crown-tundra-pokedex", "bagon", "shelgon", "salamence", "omanyte", "omastar", "other-pokemon", "ho-oh", "latios", "groudon", "dialga", "tornadus-incarnate", "reshiram", "xerneas", "solgaleo"
       ],
       bNames: [
-      "lotad", "lombre", "ludicolo", "basculin-red-striped", "appletun", "spritzee", "aromatisse", "croagunk", "toxicroak", "corsola", "cursola", "solosis", "duosion", "reuniclus", "vullaby", "mandibuzz", "sableye", "ponyta", "rapidash", "oranguru", "drampa", "lunatone", "eiscue-ice", "larvitar", "pupitar", "tyranitar", "goomy", "sliggoo", "goodra", "zamazenta", "isle-of-armor-pokedex", "heracross", "skrelp", "dragalge", "crown-tundra-pokedex", "gible", "gabite", "garchomp", "kabuto", "kabutops", "other-pokemon", "lugia", "latias", "kyogre", "palkia", "thundurus-incarnate", "zekrom", "yveltal", "lunala"
+        "lotad", "lombre", "ludicolo", "basculin-red-striped", "appletun", "spritzee", "aromatisse", "croagunk", "toxicroak", "corsola", "cursola", "solosis", "duosion", "reuniclus", "vullaby", "mandibuzz", "sableye", "ponyta", "rapidash", "oranguru", "drampa", "lunatone", "eiscue-ice", "larvitar", "pupitar", "tyranitar", "goomy", "sliggoo", "goodra", "zamazenta", "isle-of-armor-pokedex", "heracross", "skrelp", "dragalge", "crown-tundra-pokedex", "gible", "gabite", "garchomp", "kabuto", "kabutops", "other-pokemon", "lugia", "latias", "kyogre", "palkia", "thundurus-incarnate", "zekrom", "yveltal", "lunala"
       ],
     },
   },
@@ -540,7 +542,7 @@ export const GAME_GROUPS = [
         "seel", "dewgong",
         "dialga",
         "raikou", "entei", "suicune",
-        "ho-oh",  
+        "ho-oh",
       ],
       bNames: [
         "misdreavus", "mismagius",
@@ -561,12 +563,14 @@ export const GAME_GROUPS = [
 
   { id: "la", name: "Legends: Arceus", genIds: [1, 2, 3, 4] },
 
+  { id: "letsgo", name: "Let's Go Pikachu / Let's Go Eevee", genIds: [1] },
+
   {
     id: "sv", name: "Scarlet / Violet", genIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     exclusives: {
       a: "Scarlet", b: "Violet",
       aNames: [
-       "drifloon", "drifblim", "armarouge", "tauros", "stunky", "skuntank", "oranguru", "larvitar", "pupitar", "tyranitar", "stonjourner", "skrelp", "dragalge", "deino", "zweilous", "hydreigon", "great-tusk", "scream-tail", "brute-bonnet", "flutter-mane", "slither-wing", "sandy-shocks", "roaring-moon", "koraidon", "kitakami-pokedex", "gligar", "gliscor", "cramorant", "blueberry-pokedex", "cranidos", "rampardos", "vulpix", "ninetales", "gouging-fire", "raging-bolt", "other-pokemon", "raikou", "entei", "suicune", "ho-oh", "latios", "groudon", "reshiram", "solgaleo", "glastrier"
+        "drifloon", "drifblim", "armarouge", "tauros", "stunky", "skuntank", "oranguru", "larvitar", "pupitar", "tyranitar", "stonjourner", "skrelp", "dragalge", "deino", "zweilous", "hydreigon", "great-tusk", "scream-tail", "brute-bonnet", "flutter-mane", "slither-wing", "sandy-shocks", "roaring-moon", "koraidon", "kitakami-pokedex", "gligar", "gliscor", "cramorant", "blueberry-pokedex", "cranidos", "rampardos", "vulpix", "ninetales", "gouging-fire", "raging-bolt", "other-pokemon", "raikou", "entei", "suicune", "ho-oh", "latios", "groudon", "reshiram", "solgaleo", "glastrier"
       ],
       bNames: [
         "misdreavus", "mismagius", "gulpin", "swalot", "ceruledge", "tauros", "bagon", "shelgon", "salamence", "dreepy", "drakloak", "dragapult", "passimian", "eiscue-ice", "clauncher", "clawitzer", "iron-treads", "iron-bundle", "iron-hands", "iron-jugulis", "iron-moth", "iron-thorns", "iron-valiant", "miraidon", "kitakami-pokedex", "aipom", "ambipom", "morpeko-full-belly", "blueberry-pokedex", "shieldon", "bastiodon", "sandshrew", "sandslash", "iron-crown", "iron-boulder", "other-pokemon", "lugia", "latias", "kyogre", "cobalion", "terrakion", "virizion", "zekrom", "lunala", "spectrier"

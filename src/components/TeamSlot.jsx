@@ -219,9 +219,35 @@ function LearnBadge({ method, level }) {
 const MOVE_CACHE = {};
 const MOVE_FETCHING = new Set(); // evita requisições duplicadas em voo
 
-// ── Cache global de habilidades e formas ─────────────────────────────────────
-const ABILITY_CACHE = {};
-const FORM_CACHE = {};
+// ── Tipos pré-Gen 6 (espelhado de App.jsx) ───────────────────────────────────
+const PRE_FAIRY_TYPES = {
+  "cleffa":      ["normal"],
+  "clefairy":    ["normal"],
+  "clefable":    ["normal"],
+  "igglybuff":   ["normal"],
+  "jigglypuff":  ["normal"],
+  "wigglytuff":  ["normal"],
+  "mime-jr":     ["psychic"],
+  "mr-mime":     ["psychic"],
+  "togepi":      ["normal"],
+  "togetic":     ["normal", "flying"],
+  "togekiss":    ["normal", "flying"],
+  "azurill":     ["normal"],
+  "marill":      ["water"],
+  "azumarill":   ["water"],
+  "snubbull":    ["normal"],
+  "granbull":    ["normal"],
+  "ralts":       ["psychic"],
+  "kirlia":      ["psychic"],
+  "gardevoir":   ["psychic"],
+  "mawile":      ["steel"],
+  "cottonee":    ["grass"],
+  "whimsicott":  ["grass"],
+};
+function applyPreFairyTypes(pokemonName, types, activeGroup) {
+  if (!activeGroup || !activeGroup.genIds.every(id => id <= 5)) return types;
+  return PRE_FAIRY_TYPES[pokemonName.toLowerCase()] ?? types;
+}
 
 // ── MovesPanel ───────────────────────────────────────────────────────────────
 const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯︎" };
@@ -494,17 +520,11 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
 
 // ── AbilityDesc — seção de descrição de habilidade ──────────────────────────
 function AbilityDesc({ abilityName }) {
-  const [desc, setDesc] = useState(ABILITY_CACHE[abilityName] ?? null);
-  const [loading, setLoading] = useState(!ABILITY_CACHE[abilityName] && !!abilityName);
+  const [desc, setDesc] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!abilityName) return;
-    // Cache hit — sem fetch
-    if (ABILITY_CACHE[abilityName] !== undefined) {
-      setDesc(ABILITY_CACHE[abilityName]);
-      setLoading(false);
-      return;
-    }
     let cancelled = false;
     setDesc(null);
     setLoading(true);
@@ -514,18 +534,10 @@ function AbilityDesc({ abilityName }) {
         if (cancelled) return;
         const entry = d.flavor_text_entries?.find(e => e.language.name === "en");
         const effect = d.effect_entries?.find(e => e.language.name === "en");
-        const result = effect?.short_effect || entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.";
-        ABILITY_CACHE[abilityName] = result;
-        setDesc(result);
+        setDesc(effect?.short_effect || entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.");
         setLoading(false);
       })
-      .catch(() => {
-        if (!cancelled) {
-          ABILITY_CACHE[abilityName] = "Erro ao carregar.";
-          setDesc("Erro ao carregar.");
-          setLoading(false);
-        }
-      });
+      .catch(() => { if (!cancelled) { setDesc("Erro ao carregar."); setLoading(false); } });
     return () => { cancelled = true; };
   }, [abilityName]);
 
@@ -553,6 +565,7 @@ function TeamSlot({
   setDetailsPokemon,
   removePokemon,
   filterGame,
+  activeGroup,
   panelLeft,
 }) {
   const [activeTab, setActiveTab] = useState("stats");
@@ -616,11 +629,8 @@ function TeamSlot({
 
   async function switchFormKeepingBase(pokemonName, isBase = false) {
     try {
-      if (!FORM_CACHE[pokemonName]) {
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}/`);
-        FORM_CACHE[pokemonName] = await res.json();
-      }
-      const data = FORM_CACHE[pokemonName];
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}/`);
+      const data = await res.json();
       const t = [...team];
       t[index] = {
         ...pokemon,
@@ -630,7 +640,7 @@ function TeamSlot({
         shinySprite: data.sprites.front_shiny,
         animatedSprite: data.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_default || null,
         animatedShinySprite: data.sprites.versions?.['generation-v']?.['black-white']?.animated?.front_shiny || null,
-        types: data.types.map(x => x.type.name),
+        types: applyPreFairyTypes(data.name, data.types.map(x => x.type.name), activeGroup),
         abilities: data.abilities.map(a => a.ability.name),
         selectedAbility: data.abilities[0]?.ability?.name ?? "",
         stats: data.stats,
@@ -733,7 +743,7 @@ function TeamSlot({
                 className="slot-ability-select">
                 {pokemon.abilities.map(a => (
                   <option key={a} value={a}>
-                    {formatName(a)}
+                    {formatName(a)}{pokemon.hiddenAbilities?.has(a) ? " (H)" : ""}
                   </option>
                 ))}
               </select>
@@ -805,44 +815,33 @@ function TeamSlot({
 
 // ── TeamMoveCard — golpes de um slot exibidos abaixo do time ─────────────────
 export function TeamMoveCard({ pokemon }) {
-  const [, forceUpdate] = useState(0);
+  const [details, setDetails] = useState({});
 
   const moves = pokemon?.selectedMoves || [];
 
   useEffect(() => {
     if (!moves.length) return;
-    const toFetch = moves.filter(m => !MOVE_CACHE[m] && !MOVE_FETCHING.has(m));
-    if (!toFetch.length) return;
-
     let cancelled = false;
-    toFetch.forEach(m => MOVE_FETCHING.add(m));
-
+    const toFetch = moves.filter(m => !details[m]);
+    if (!toFetch.length) return;
     Promise.all(toFetch.map(async name => {
       try {
         const r = await fetch(`https://pokeapi.co/api/v2/move/${name}/`);
         const d = await r.json();
-        const descEntry = d.flavor_text_entries?.find(e => e.language.name === "en");
         return [name, {
           type: d.type?.name || "normal",
           damageClass: d.damage_class?.name || "status",
-          power: d.power ?? null,
-          accuracy: d.accuracy ?? null,
-          desc: descEntry?.flavor_text?.replace(/\f/g, " ") || "",
         }];
-      } catch {
-        return [name, { type: "normal", damageClass: "status", power: null, accuracy: null, desc: "" }];
-      } finally {
-        MOVE_FETCHING.delete(name);
-      }
+      } catch { return [name, { type: "normal", damageClass: "status" }]; }
     })).then(results => {
       if (cancelled) return;
-      results.forEach(([k, v]) => { MOVE_CACHE[k] = v; });
-      forceUpdate(n => n + 1);
+      setDetails(prev => { const n = { ...prev }; results.forEach(([k, v]) => { n[k] = v; }); return n; });
     });
     return () => { cancelled = true; };
   }, [moves.join(",")]);
 
-  // Reutiliza o DAMAGE_CLASS_ICON definido no topo do arquivo
+  const DAMAGE_CLASS_ICON = { physical: "✴", special: "𖦹", status: "☯" };
+
   if (!pokemon) return <div className="team-move-card team-move-card--empty" />;
 
   const hasMoves = moves.length > 0;
@@ -853,7 +852,7 @@ export function TeamMoveCard({ pokemon }) {
         <div className="team-move-grid">
           {[0, 1, 2, 3].map(i => {
             const mv = moves[i];
-            const det = mv ? MOVE_CACHE[mv] : null;
+            const det = mv ? details[mv] : null;
             const bg = det ? (TYPE_COLORS[det.type] || "#888") : null;
             const tc = det && DARK_TEXT_TYPES.has(det.type) ? "#333" : "#fff";
             return (

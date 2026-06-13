@@ -374,7 +374,7 @@ export default function App() {
   function clearTeam() {
     setTeam(Array(6).fill(null)); setDetailsPokemon(-1); setShowAnalysis(false);
   }
-  function startGame() { setFilterGame(setupGame); setStarted(true); }
+  function startGame(id) { setFilterGame(id); setStarted(true); window.scrollTo(0, 0); }
   function clearFilters() {
     setSearch(""); setFilterType("all"); setFilterGen("all");
     setFilterStage("all"); setHideLegendary(false); setFilterVersion("all");
@@ -385,21 +385,7 @@ export default function App() {
   // ── Setup screen ──────────────────────────────────────────────────────────
   if (!started) {
     return (
-      <div className="setup-screen">
-        <h1>Pokémon Team Builder</h1>
-        <div className="setup-card">
-          <label style={{ fontWeight: "bold" }}>Jogo</label>
-          <select value={setupGame} onChange={e => setSetupGame(e.target.value)}
-            style={{ padding: "10px", borderRadius: 8, border: "1px solid #ccc", fontSize: 14 }}>
-            <option value="all">Todos os jogos</option>
-            {GAME_GROUPS.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
-          <p style={{ margin: 0, fontSize: 12, color: "#888" }}>
-            Você poderá mudar o filtro de jogo dentro do builder também.
-          </p>
-          <button className="start-btn" onClick={startGame}>Começar →</button>
-        </div>
-      </div>
+      <SetupScreen onStart={startGame} />
     );
   }
 
@@ -412,7 +398,12 @@ export default function App() {
   return (
     <div className="builder" onClick={handleOverlayClick}>
       <div className="builder-header">
-        <h1 style={{ margin: 0 }}>Seu Time</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button className="action-btn" onClick={e => { e.stopPropagation(); setStarted(false); clearTeam(); window.scrollTo(0, 0); }}>
+            ←
+          </button>
+          <h1 style={{ margin: 0 }}>Seu Time</h1>
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {hasTeam && <>
             <button className="action-btn danger" onClick={e => { e.stopPropagation(); clearTeam(); }}>
@@ -423,9 +414,6 @@ export default function App() {
               📊 {showAnalysis ? "Ocultar" : "Análise do time"}
             </button>
           </>}
-          <button className="action-btn" onClick={e => { e.stopPropagation(); setStarted(false); clearTeam(); }}>
-            ← Voltar
-          </button>
         </div>
       </div>
 
@@ -563,25 +551,245 @@ export default function App() {
               </h3>
               <div className="pokemon-list">
                 {section.pokemon.map(pokemon => (
-               <div
-  key={pokemon.id + pokemon.name}
-  className={`pokemon-card ${
-    recentlyAdded === pokemon.name ? "pokemon-added" : ""
-  }`}
-  data-name={formatName(pokemon.displayName || pokemon.name)}
-  onClick={() => addPokemon(pokemon)}
->
-  <img
-    src={pokemon.sprite}
-    alt={pokemon.name}
-    className="pokemon-list-sprite"
-  />
-</div>
+                  <div
+                    key={pokemon.id + pokemon.name}
+                    className={`pokemon-card ${recentlyAdded === pokemon.name ? "pokemon-added" : ""
+                      }`}
+                    data-name={formatName(pokemon.displayName || pokemon.name)}
+                    onClick={() => addPokemon(pokemon)}
+                  >
+                    <img
+                      src={pokemon.sprite}
+                      alt={pokemon.name}
+                      className="pokemon-list-sprite"
+                    />
+                  </div>
                 ))}
               </div>
             </div>
           ))
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ── Dados visuais da tela de setup ───────────────────────────────────────────
+// IDs batem exatamente com GAME_GROUPS em generations.js
+// Jogos com `subs` exibem botões de versão ao clicar no card
+const SETUP_GENS = [
+  {
+    label: "Geração I",
+    games: [
+      { id: "rby", name: "Red / Blue / Yellow", sprite: 25 },
+    ],
+  },
+  {
+    label: "Geração II",
+    games: [
+      { id: "gsc", name: "Gold / Silver / Crystal", sprite: 245 },
+    ],
+  },
+  {
+    label: "Geração III",
+    games: [
+      { id: "rse", name: "Ruby / Sapphire / Emerald", sprite: 384 },
+      { id: "frlg", name: "FireRed / LeafGreen", sprite: 6 },
+    ],
+  },
+  {
+    label: "Geração IV",
+    games: [
+      { id: "dpp", name: "Diamond / Pearl / Platinum", sprite: 487 },
+      { id: "hgss", name: "HeartGold / SoulSilver", sprite: 250 },
+    ],
+  },
+  {
+    label: "Geração V",
+    games: [
+      { id: "bw", name: "Black / White", sprite: 643 },
+      { id: "bw2", name: "Black 2 / White 2", sprite: 10023 },
+    ],
+  },
+  {
+    label: "Geração VI",
+    games: [
+      { id: "xy", name: "X / Y", sprite: 10075 },
+      { id: "oras", name: "Omega Ruby / Alpha Sapphire", sprite: 10078 },
+    ],
+  },
+  {
+    label: "Geração VII",
+    games: [
+      { id: "sm", name: "Sun / Moon", sprite: 791 },
+      { id: "usum", name: "Ultra Sun / Moon", sprite: 10156 },
+      { id: "letsgo", name: "Let's Go", sprite: 151 },
+    ],
+  },
+  {
+    label: "Geração VIII",
+    games: [
+      { id: "swsh", name: "Sword / Shield", sprite: 890 },
+      { id: "bdsp", name: "Brilliant Diamond \n Shining Pearl", sprite: 483 },
+      { id: "la", name: "Legends: Arceus", sprite: 493 },
+    ],
+  },
+  {
+    label: "Geração IX",
+    games: [
+      { id: "sv", name: "Scarlet / Violet", sprite: 1007 },
+      { id: "za", name: "Legends: Z-A", sprite: 718 },
+    ],
+  },
+];
+
+function SetupScreen({ onStart }) {
+  function select(id) {
+    onStart(id);
+  }
+
+  return (
+    <div className="setup-screen">
+      <h1
+        style={{
+          margin: "0 0 0px",
+          fontSize: 22,
+          fontWeight: 600,
+          marginTop: 20,
+          lineHeight: 1.1,
+        }}
+      >
+        Pokémon Team Builder - By Moon ☾
+      </h1>
+
+      <p
+        style={{
+          margin: 0,
+          fontSize: 14,
+          color: "#888",
+          lineHeight: 1.2,
+        }}
+      >
+        Escolha um jogo, só os Pokémon disponíveis nele aparecerão
+      </p>
+
+      {/* Todos os jogos */}
+      <div
+        onClick={() => select("all")}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+        style={{
+          background: "white",
+          borderRadius: 12,
+          border: "1px solid #ddd",
+          padding: "16px 14px",
+          cursor: "pointer",
+          position: "relative",
+          overflow: "hidden",
+          minHeight: 100, // mais alto
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          maxWidth: 640,
+          width: "100%",
+          boxSizing: "border-box",
+          transition: "transform 0.1s",
+          marginTop: 10,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 16,
+            fontWeight: 600,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          Todos os jogos
+        </span>
+
+        <span
+          style={{
+            fontSize: 13,
+            color: "#888",
+            marginTop: 4,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          Sem restrição de geração
+        </span>
+
+        <img
+          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10147.png"
+          alt=""
+          style={{
+            position: "absolute",
+            right: -18,
+            bottom: 0,
+            width: 100,
+            height: 100,
+            objectFit: "contain",
+            imageRendering: "pixelated",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+
+      {/* Grid por geração */}
+      <div style={{ maxWidth: 640, width: "100%" }}>
+        {SETUP_GENS.map(gen => (
+          <div key={gen.label} style={{ marginBottom: 10 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 500, color: "#aaa",
+              textTransform: "uppercase", letterSpacing: "0.6px",
+              marginBottom: 5, marginLeft: 2,
+            }}>
+              {gen.label}
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {gen.games.map(game => {
+                const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${game.sprite}.png`;
+                return (
+                  <div
+                    key={game.id}
+                    onClick={() => select(game.id)}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    style={{
+                      flex: 1, background: "white", borderRadius: 12,
+                      border: "1px solid #ddd", padding: "12px 10px 10px",
+                      cursor: "pointer", position: "relative", overflow: "hidden",
+                      minHeight: 100, display: "flex", flexDirection: "column",
+                      justifyContent: "center",gap: 3, boxSizing: "border-box", transition: "transform 0.1s",
+                    }}
+                  >
+                    <span
+                      style={{
+                        whiteSpace: "pre-line",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        lineHeight: 1.3,
+                        position: "relative",
+                        zIndex: 1,
+                      }}
+                    >
+                      {game.name}
+                    </span>
+                    <img src={spriteUrl} alt=""
+                      style={{
+                        position: "absolute", right: -18, bottom: -6,
+                        width: 100, height: 100, objectFit: "contain",
+                        opacity: 1, pointerEvents: "none",
+                        imageRendering: "pixelated",
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
