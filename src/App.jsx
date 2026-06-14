@@ -10,6 +10,36 @@ import "./App.css";
 // ── Cache global de dados de Pokémon — evita re-fetch ao re-adicionar ────────
 const POKEMON_CACHE = {};
 
+// ── Tipos pré-Gen 6: Pokémon que ganharam Fairy em X/Y ───────────────────────
+const PRE_FAIRY_TYPES = {
+  "cleffa":     ["normal"],
+  "clefairy":   ["normal"],
+  "clefable":   ["normal"],
+  "igglybuff":  ["normal"],
+  "jigglypuff": ["normal"],
+  "wigglytuff": ["normal"],
+  "mime-jr":    ["psychic"],
+  "mr-mime":    ["psychic"],
+  "togepi":     ["normal"],
+  "togetic":    ["normal", "flying"],
+  "togekiss":   ["normal", "flying"],
+  "azurill":    ["normal"],
+  "marill":     ["water"],
+  "azumarill":  ["water"],
+  "snubbull":   ["normal"],
+  "granbull":   ["normal"],
+  "ralts":      ["psychic"],
+  "kirlia":     ["psychic"],
+  "gardevoir":  ["psychic"],
+  "mawile":     ["steel"],
+  "cottonee":   ["grass"],
+  "whimsicott": ["grass"],
+};
+function applyPreFairyTypes(pokemonName, types, activeGroup) {
+  if (!activeGroup || !activeGroup.genIds.every(id => id <= 5)) return types;
+  return PRE_FAIRY_TYPES[pokemonName.toLowerCase()] ?? types;
+}
+
 // Formata nomes: troca hífens por espaços e capitaliza cada palavra
 function formatName(name) {
   return name.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -99,6 +129,7 @@ export default function App() {
   const [setupGame, setSetupGame] = useState("all");
 
   const [team, setTeam] = useState(Array(6).fill(null));
+  const [pendingGame, setPendingGame] = useState(null);
   const [pokemonList, setPokemonList] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -356,7 +387,7 @@ export default function App() {
       sprite: d.sprites.front_default,
       shinySprite: d.sprites.front_shiny,
       isShiny: false,
-      types: d.types.map(x => x.type.name),
+      types: applyPreFairyTypes(d.name, d.types.map(x => x.type.name), activeGroup),
       abilities: d.abilities.map(a => a.ability.name),
       selectedAbility: d.abilities[0]?.ability?.name ?? "",
       stats: d.stats, moves: d.moves, selectedMoves: [],
@@ -397,6 +428,37 @@ export default function App() {
   // ── Builder ───────────────────────────────────────────────────────────────
   return (
     <div className="builder" onClick={handleOverlayClick}>
+
+      {/* Modal de confirmação de troca de jogo */}
+      {pendingGame !== null && (
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white", borderRadius: 16, padding: "28px 28px 24px",
+            width: 320, boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+            display: "flex", flexDirection: "column", gap: 12,
+          }}>
+            <p style={{ margin: 0, fontWeight: "bold", fontSize: 15 }}>Trocar de jogo?</p>
+            <p style={{ margin: 0, fontSize: 13, color: "#666", lineHeight: 1.5 }}>
+              Trocar o jogo vai limpar seu time atual. Tem certeza?
+            </p>
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <button className="action-btn danger" style={{ flex: 1 }} onClick={() => {
+                setFilterGame(pendingGame); setFilterGen("all");
+                clearTeam(); setPendingGame(null);
+              }}>
+                Sim, trocar
+              </button>
+              <button className="action-btn" style={{ flex: 1 }} onClick={() => setPendingGame(null)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="builder-header">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="action-btn" onClick={e => { e.stopPropagation(); setStarted(false); clearTeam(); window.scrollTo(0, 0); }}>
@@ -461,7 +523,11 @@ export default function App() {
             value={search} onChange={e => setSearch(e.target.value)} />
 
           {/* Filtro de jogo */}
-          <select value={filterGame} onChange={e => { setFilterGame(e.target.value); setFilterGen("all"); }}>
+          <select value={filterGame} onChange={e => {
+            const next = e.target.value;
+            if (hasTeam) { setPendingGame(next); }
+            else { setFilterGame(next); setFilterGen("all"); }
+          }}>
             <option value="all">Todos os jogos</option>
             {GAME_GROUPS.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
@@ -594,7 +660,7 @@ const SETUP_GENS = [
     label: "Geração III",
     games: [
       { id: "rse", name: "Ruby / Sapphire / Emerald", sprite: 384 },
-      { id: "frlg", name: "FireRed / LeafGreen", sprite: 6 },
+      { id: "frlg", name: "FireRed / LeafGreen", sprite: 150 },
     ],
   },
   {

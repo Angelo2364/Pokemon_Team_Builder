@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { TYPE_CHART, TYPE_ABBR, TYPE_COLORS, DARK_TEXT_TYPES, GAME_GROUPS, GAME_VERSION_GROUPS } from "../data/generations";
+import { filterForms } from "../data/formLimits";
 
 // ── Shared util ──────────────────────────────────────────────────────────────
 function formatName(name) {
@@ -703,19 +704,22 @@ function TeamSlot({
           </div>
 
           {/* Formas alternativas */}
-          {forms && forms.length > 0 && (
-            <div className="forms-row" onClick={e => e.stopPropagation()}>
-              <span style={{ fontSize: 10, color: "#888" }}>Formas:</span>
-              {forms.slice(0, 4).map(f => (
-                <button key={f.pokemon.name} className="form-btn"
-                  onClick={() => switchFormKeepingBase(f.pokemon.name, false)}>
-                  {f.pokemon.name
-                    .replace((pokemon.baseFormName || pokemon.name).toLowerCase() + "-", "")
-                    .replace(/-/g, " ")}
-                </button>
-              ))}
-            </div>
-          )}
+          {(() => {
+            const visibleForms = filterForms(forms || [], filterGame);
+            return visibleForms.length > 0 && (
+              <div className="forms-row" onClick={e => e.stopPropagation()}>
+                <span style={{ fontSize: 10, color: "#888" }}>Formas:</span>
+                {visibleForms.slice(0, 4).map(f => (
+                  <button key={f.pokemon.name} className="form-btn"
+                    onClick={() => switchFormKeepingBase(f.pokemon.name, false)}>
+                    {f.pokemon.name
+                      .replace((pokemon.baseFormName || pokemon.name).toLowerCase() + "-", "")
+                      .replace(/-/g, " ")}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Voltar à forma base */}
           {isAlternateForm && pokemon.baseFormName && (
