@@ -844,6 +844,7 @@ body.dark .stats-panel p {
 
 /* ── Dark mode: texto dos type badges fica preto pra contrastar com fundo escuro da página ── */
 body.dark .type-badge { color: #111; }
+body.dark .type-badge.dark { color: white; }
 
 .toast {
   position: fixed;
@@ -896,6 +897,8 @@ body.dark .type-badge { color: #111; }
   font-weight: bold;
   font-size: 12px;
   text-decoration: none;
+  border: none;
+  cursor: pointer;
   transition: background 0.15s;
 }
 .footer-donation-btn:hover { background: #274d7a; }
@@ -912,3 +915,88 @@ body.dark .type-badge { color: #111; }
   margin-top: 10px !important;
   font-size: 12px;
 }
+
+/* ── Modal Pix ── */
+.pix-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.pix-modal {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  min-width: 240px;
+}
+
+.pix-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+}
+.pix-modal-close:hover { color: var(--text); }
+
+.pix-modal-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text);
+  margin: 0;
+}
+
+.pix-modal-canvas {
+  border-radius: 8px;
+  border: 3px solid var(--border);
+}
+
+.pix-modal-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pix-modal-key-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.pix-modal-key {
+  font-size: 12px;
+  color: var(--text);
+  font-family: monospace;
+}
+
+.pix-modal-copy {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.pix-modal-copy:hover { background: var(--btn-hover); }
