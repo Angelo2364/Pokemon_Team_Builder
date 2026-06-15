@@ -875,3 +875,40 @@ body.dark .type-badge { color: #111; }
     transform: translateY(0);
   }
 }
+/* ── Footer ── */
+.site-footer {
+  text-align: center;
+  padding: 24px 16px 32px;
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+.site-footer p { margin: 4px 0; }
+
+.footer-donation-btn {
+  display: inline-block;
+  background: #1c3a5e;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 12px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.footer-donation-btn:hover { background: #274d7a; }
+
+.footer-link {
+  color: var(--text);
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.footer-link:hover { opacity: 0.75; }
+
+.footer-copy {
+  margin-top: 10px !important;
+  font-size: 12px;
+}

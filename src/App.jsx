@@ -4,6 +4,7 @@ import TeamAnalysis from "./components/TeamAnalysis";
 import { generations, ALL_TYPES, GAME_GROUPS } from "./data/generations";
 import { GAME_DEX } from "./data/gamedex";
 import { STAGE1, STAGE2, FINAL } from "./data/evostages";
+import Footer from "./components/Footer";
 import "./App.css";
 
 
@@ -764,6 +765,9 @@ export default function App() {
           {toast}
         </div>
       )}
+
+      <Footer />
+
     </div>
   );
 }
@@ -868,13 +872,14 @@ function SetupScreen({ onStart, dark, setDark }) {
       <p
         style={{
           margin: 0,
-          fontSize: 14,
+          fontSize: 16,
           color: "#888",
           lineHeight: 1.2,
         }}
       >
-        Escolha um jogo, só os Pokémon disponíveis nele aparecerão
+        Seja bem-vindo! Escolha um jogo e comece a planejar seu time! - V1.0
       </p>
+      
 
       {/* Todos os jogos */}
       <div
@@ -965,6 +970,9 @@ function SetupScreen({ onStart, dark, setDark }) {
             </div>
           </div>
         ))}
+    
+      <Footer />
+
       </div>
     </div>
   );
