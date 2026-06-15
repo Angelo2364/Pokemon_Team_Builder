@@ -98,14 +98,14 @@ export default function TeamAnalysis({ team, onHover }) {
         onMouseEnter={() => onHover && onHover(new Set(indices))}
         onMouseLeave={() => onHover && onHover(null)}>
         <span
-  className="type-badge"
-  style={{
-    background: bg,
-    minWidth: 58,
-    textAlign: "center",
-    display: "block",
-  }}
->
+          className="type-badge"
+          style={{
+            background: bg,
+            minWidth: 58,
+            textAlign: "center",
+            display: "block",
+          }}
+        >
           {type}
         </span>
         <span style={{ fontSize: 12, fontWeight: "bold", color: mode === "weak" ? "#c0392b" : "#27ae60" }}>
@@ -142,7 +142,7 @@ export default function TeamAnalysis({ team, onHover }) {
   };
 
   return (
-    <div className="team-analysis">
+    <div className="team-analysis" onMouseLeave={() => onHover && onHover(null)}>
       <h2 style={{ marginBottom: 4 }}>
         Análise do Time
       </h2>

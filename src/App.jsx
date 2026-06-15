@@ -230,7 +230,15 @@ export default function App() {
   const [legendaryIds, setLegendaryIds] = useState(null);
   const [highlightSlots, setHighlightSlots] = useState(null);
 
-  const [moveSearchResults, setMoveSearchResults] = useState([]);
+useEffect(() => {
+  function clearOnScroll() {
+    setHighlightSlots(null);
+  }
+  window.addEventListener("scroll", clearOnScroll, { passive: true });
+  return () => window.removeEventListener("scroll", clearOnScroll);
+}, []);
+
+const [moveSearchResults, setMoveSearchResults] = useState([]);
   const [abilitySearchResults, setAbilitySearchResults] = useState([]);
   const [selectedMove, setSelectedMove] = useState(null);
   const [selectedAbilityFilter, setSelectedAbilityFilter] = useState(null);
