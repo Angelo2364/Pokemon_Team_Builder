@@ -42,24 +42,49 @@ export function TypePill({ type, size = "sm" }) {
   return <span className={`type-badge ${type}`}>{type}</span>;
 }
 
+const NATURES = {
+  Adamant: { up: "attack", down: "special-attack" },
+  Bold: { up: "defense", down: "attack" },
+  Brave: { up: "attack", down: "speed" },
+  Calm: { up: "special-defense", down: "attack" },
+  Careful: { up: "special-defense", down: "special-attack" },
+  Gentle: { up: "special-defense", down: "defense" },
+  Hasty: { up: "speed", down: "defense" },
+  Impish: { up: "defense", down: "special-attack" },
+  Jolly: { up: "speed", down: "special-attack" },
+  Lax: { up: "defense", down: "special-defense" },
+  Lonely: { up: "attack", down: "defense" },
+  Mild: { up: "special-attack", down: "defense" },
+  Modest: { up: "special-attack", down: "attack" },
+  Naive: { up: "speed", down: "special-defense" },
+  Naughty: { up: "attack", down: "special-defense" },
+  Quiet: { up: "special-attack", down: "speed" },
+  Rash: { up: "special-attack", down: "special-defense" },
+  Relaxed: { up: "defense", down: "speed" },
+  Sassy: { up: "special-defense", down: "speed" },
+  Timid: { up: "speed", down: "attack" },
+
+  Docile: { up: null, down: null },
+};
+
 // ── Modificadores de fraqueza por habilidade ─────────────────────────────────
 const ABILITY_IMMUNITY = {
-  "flash-fire":       { fire: 0 },
-  "well-baked-body":  { fire: 0 },
-  "water-absorb":     { water: 0 },
-  "storm-drain":      { water: 0 },
-  "dry-skin":         { water: 0, fire: 1.25 },
-  "volt-absorb":      { electric: 0 },
-  "motor-drive":      { electric: 0 },
-  "lightning-rod":    { electric: 0 },
-  "levitate":         { ground: 0 },
-  "sap-sipper":       { grass: 0 },
-  "earth-eater":      { ground: 0 },
-  "thick-fat":        { fire: 0.5, ice: 0.5 },
-  "heatproof":        { fire: 0.5 },
-  "water-bubble":     { fire: 0.5 },
-  "purifying-salt":   { ghost: 0.5 },
-  "fluffy":           { fire: 2 },
+  "flash-fire": { fire: 0 },
+  "well-baked-body": { fire: 0 },
+  "water-absorb": { water: 0 },
+  "storm-drain": { water: 0 },
+  "dry-skin": { water: 0, fire: 1.25 },
+  "volt-absorb": { electric: 0 },
+  "motor-drive": { electric: 0 },
+  "lightning-rod": { electric: 0 },
+  "levitate": { ground: 0 },
+  "sap-sipper": { grass: 0 },
+  "earth-eater": { ground: 0 },
+  "thick-fat": { fire: 0.5, ice: 0.5 },
+  "heatproof": { fire: 0.5 },
+  "water-bubble": { fire: 0.5 },
+  "purifying-salt": { ghost: 0.5 },
+  "fluffy": { fire: 2 },
 };
 
 // ── WeaknessPanel ────────────────────────────────────────────────────────────
@@ -80,11 +105,11 @@ export function WeaknessPanel({ types, ability }) {
   const abilityActive = Object.keys(abilityMods).length > 0;
 
   const sections = [
-    { label: "×4 Fraco",   filter: v => v >= 4,              color: "#c0392b" },
-    { label: "×2 Fraco",  filter: v => v >= 2 && v < 4,    color: "#e74c3c" },
-    { label: "×1 Fraco",  filter: v => v > 1 && v < 2,     color: "#e67e22" },
-    { label: "½ Resiste",  filter: v => v > 0 && v <= 0.5,  color: "#27ae60" },
-    { label: "Imune",      filter: v => v === 0,             color: "#2980b9" },
+    { label: "×4 Fraco", filter: v => v >= 4, color: "#c0392b" },
+    { label: "×2 Fraco", filter: v => v >= 2 && v < 4, color: "#e74c3c" },
+    { label: "×1 Fraco", filter: v => v > 1 && v < 2, color: "#e67e22" },
+    { label: "½ Resiste", filter: v => v > 0 && v <= 0.5, color: "#27ae60" },
+    { label: "Imune", filter: v => v === 0, color: "#2980b9" },
   ];
   const hasAny = sections.some(({ filter }) => Object.values(mult).some(filter));
   return (
@@ -222,28 +247,28 @@ const MOVE_FETCHING = new Set(); // evita requisições duplicadas em voo
 
 // ── Tipos pré-Gen 6 (espelhado de App.jsx) ───────────────────────────────────
 const PRE_FAIRY_TYPES = {
-  "cleffa":      ["normal"],
-  "clefairy":    ["normal"],
-  "clefable":    ["normal"],
-  "igglybuff":   ["normal"],
-  "jigglypuff":  ["normal"],
-  "wigglytuff":  ["normal"],
-  "mime-jr":     ["psychic"],
-  "mr-mime":     ["psychic"],
-  "togepi":      ["normal"],
-  "togetic":     ["normal", "flying"],
-  "togekiss":    ["normal", "flying"],
-  "azurill":     ["normal"],
-  "marill":      ["water"],
-  "azumarill":   ["water"],
-  "snubbull":    ["normal"],
-  "granbull":    ["normal"],
-  "ralts":       ["psychic"],
-  "kirlia":      ["psychic"],
-  "gardevoir":   ["psychic"],
-  "mawile":      ["steel"],
-  "cottonee":    ["grass"],
-  "whimsicott":  ["grass"],
+  "cleffa": ["normal"],
+  "clefairy": ["normal"],
+  "clefable": ["normal"],
+  "igglybuff": ["normal"],
+  "jigglypuff": ["normal"],
+  "wigglytuff": ["normal"],
+  "mime-jr": ["psychic"],
+  "mr-mime": ["psychic"],
+  "togepi": ["normal"],
+  "togetic": ["normal", "flying"],
+  "togekiss": ["normal", "flying"],
+  "azurill": ["normal"],
+  "marill": ["water"],
+  "azumarill": ["water"],
+  "snubbull": ["normal"],
+  "granbull": ["normal"],
+  "ralts": ["psychic"],
+  "kirlia": ["psychic"],
+  "gardevoir": ["psychic"],
+  "mawile": ["steel"],
+  "cottonee": ["grass"],
+  "whimsicott": ["grass"],
 };
 function applyPreFairyTypes(pokemonName, types, activeGroup) {
   if (!activeGroup || !activeGroup.genIds.every(id => id <= 5)) return types;
@@ -401,8 +426,8 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: "100%", boxSizing: "border-box",
-          padding: "5px 8px", border: "1px solid #ccc", borderRadius: 8,
-          fontSize: 11, marginBottom: 6, background: "#fafafa", color: "#333",
+          padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 8,
+          fontSize: 11, marginBottom: 6, background: "var(--card2)", color: "var(--text)",
         }}>
         <option value="all">Todos os jogos</option>
         {GAME_GROUPS.map(g => (
@@ -419,8 +444,9 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
           onClick={e => e.stopPropagation()}
           style={{
             flex: 1, padding: "4px 6px", fontSize: 10, fontWeight: "bold",
-            border: "1px solid #ccc", borderRadius: 6, background: filterDmgClass !== "all" ? "#333" : "#f0f0f0",
-            color: filterDmgClass !== "all" ? "#fff" : "#555", cursor: "pointer",
+            border: "1px solid var(--border)", borderRadius: 6,
+            background: filterDmgClass !== "all" ? "#333" : "var(--card2)",
+            color: filterDmgClass !== "all" ? "#fff" : "var(--text)", cursor: "pointer",
           }}>
           <option value="all">Todos</option>
           <option value="physical">✴ Físico</option>
@@ -434,9 +460,9 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
           title={["Ordenar por power", "Power: maior primeiro", "Power: menor primeiro"][sortPower]}
           style={{
             padding: "4px 9px", fontSize: 10, fontWeight: "bold", cursor: "pointer",
-            border: "1px solid #ccc", borderRadius: 6,
-            background: sortPower > 0 ? "#333" : "#f0f0f0",
-            color: sortPower > 0 ? "#fff" : "#555",
+            border: "1px solid var(--border)", borderRadius: 6,
+            background: sortPower > 0 ? "#333" : "var(--card2)",
+            color: sortPower > 0 ? "#fff" : "var(--text)",
             flexShrink: 0, transition: "all 0.12s",
           }}>
           {sortPower === 0 ? "Pwr ↕" : sortPower === 1 ? "Pwr ↓" : "Pwr ↑"}
@@ -467,7 +493,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
               style={mt ? {
                 background: active ? "#222" : bg + "33",
                 borderLeft: `5px solid ${bg}`,
-                color: active ? "#fff" : "#222",
+                color: active ? "#fff" : undefined,
               } : {}}
               onClick={e => { e.stopPropagation(); toggleMove(m.name); }}>
               {/* Linha principal */}
@@ -545,14 +571,14 @@ function AbilityDesc({ abilityName }) {
   return (
     <div style={{
       marginTop: 12, padding: "10px 12px", borderRadius: 10,
-      background: "#f7f7f7", border: "1px solid #e8e8e8",
+      background: "var(--card2)", border: "1px solid var(--border)",
     }}>
-      <span style={{ fontSize: 12, fontWeight: "bold", color: "#555", display: "block", marginBottom: 4 }}>
+      <span style={{ fontSize: 12, fontWeight: "bold", color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
         Habilidade — {formatName(abilityName)}
       </span>
       {loading
-        ? <span style={{ fontSize: 11, color: "#aaa" }}>Carregando...</span>
-        : <span style={{ fontSize: 12, color: "#333", lineHeight: 1.5 }}>{desc}</span>
+        ? <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Carregando...</span>
+        : <span style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{desc}</span>
       }
     </div>
   );
@@ -673,6 +699,15 @@ function TeamSlot({
   const wrapperBg = typeColors.length >= 2
     ? `linear-gradient(to right, ${typeColors[0]} 50%, ${typeColors[1]} 50%)`
     : typeColors[0];
+  const nature = NATURES[pokemon.selectedNature];
+  const SHORT_STAT = {
+    attack: "ATK",
+    defense: "DEF",
+    "special-attack": "SPA",
+    "special-defense": "SPD",
+    speed: "SPE",
+  };
+
 
   return (
     <div className="team-slot-wrapper" style={{ background: wrapperBg }}>
@@ -734,9 +769,9 @@ function TeamSlot({
 
           <div className="pokemon-controls">
             <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
-              {pokemon.hiddenAbilities?.has(pokemon.selectedAbility) && (
-                <span className="hidden-ability-badge" title="Hidden Ability">H</span>
-              )}
+              {pokemon.hiddenAbilities?.has(pokemon.selectedAbility)
+              }
+
               <select value={pokemon.selectedAbility}
                 onClick={e => e.stopPropagation()}
                 onChange={e => {
@@ -791,15 +826,80 @@ function TeamSlot({
 
             {activeTab === "stats" && (
               <div style={{ paddingTop: 8 }}>
-                {pokemon.stats.map(stat => (
-                  <div key={stat.stat.name} className="stat-row">
-                    <span>{{ "hp": "HP", "attack": "ATK", "defense": "DEF", "special-attack": "SPA", "special-defense": "SPD", "speed": "SPE" }[stat.stat.name]}</span>
-                    <div className="stat-bar">
-                      <div className="stat-fill" style={{ width: `${(stat.base_stat / 255) * 100}%` }} />
+
+                {pokemon.stats.map(stat => {
+                  const boosted = nature?.up === stat.stat.name;
+                  const lowered = nature?.down === stat.stat.name;
+
+                  return (
+                    <div key={stat.stat.name} className="stat-row">
+                      <span
+                        style={{
+                          color:
+                            boosted ? "#27ae60" :
+                              lowered ? "#e74c3c" :
+                                undefined
+                        }}
+                      >
+                        {{
+                          "hp": "HP",
+                          "attack": "ATK",
+                          "defense": "DEF",
+                          "special-attack": "SPA",
+                          "special-defense": "SPD",
+                          "speed": "SPE"
+                        }[stat.stat.name]}
+                      </span>
+
+                      <div className="stat-bar">
+                        <div
+                          className="stat-fill"
+                          style={{
+                            width: `${(stat.base_stat / 255) * 100}%`
+                          }}
+                        />
+                      </div>
+
+                      <span className="stat-value">
+                        {stat.base_stat}
+                        {boosted && (
+                          <span style={{ color: "#27ae60", fontSize: 10, marginLeft: 2, lineHeight: 1 }}>▲</span>
+                        )}
+                        {lowered && (
+                          <span style={{ color: "#e74c3c", fontSize: 10, marginLeft: 2, lineHeight: 1 }}>▼</span>
+                        )}
+                      </span>
                     </div>
-                    <span className="stat-value">{stat.base_stat}</span>
-                  </div>
-                ))}
+                  );
+                })}
+
+                {/* 👇 MOVE ISSO PARA O FINAL */}
+                <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
+                  <select
+                    value={pokemon.selectedNature || ""}
+                    onChange={e => {
+                      const t = [...team];
+                      t[index] = {
+                        ...t[index],
+                        selectedNature: e.target.value
+                      };
+                      setTeam(t);
+                    }}
+                    className="slot-ability-select"
+                  >
+                    <option value="">Nature</option>
+                    {Object.keys(NATURES).map(n => {
+                      const nat = NATURES[n];
+                      const suffix = nat.up
+                        ? ` (+${SHORT_STAT[nat.up]} / -${SHORT_STAT[nat.down]})`
+                        : " (Neutro)";
+                      return (
+                        <option key={n} value={n}>{n}{suffix}</option>
+                      );
+                    })}
+                  </select>
+                </div>
+
                 <AbilityDesc abilityName={pokemon.selectedAbility} />
               </div>
             )}
@@ -852,6 +952,9 @@ export function TeamMoveCard({ pokemon }) {
 
   return (
     <div className="team-move-card">
+      {pokemon.selectedNature && (
+        <span className="slot-nature-tag">Nature: {pokemon.selectedNature}</span>
+      )}
       {hasMoves ? (
         <div className="team-move-grid">
           {[0, 1, 2, 3].map(i => {

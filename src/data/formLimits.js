@@ -13,101 +13,107 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ZA_MEGAS = [
-     "meganium-mega",
-      "emboar-mega",
-      "feraligatr-mega",
-      "barbaracle-mega",
-      "starmie-mega",
-      "floette-mega",
-      "floette-eternal",
-      "pyroar-mega",
-      "clefable-mega",
-      "scolipede-mega",
-      "victreebel-mega",
-      "excadrill-mega",
-      "eelektross-mega",
-      "dragonite-mega",
-      "malamar-mega",
-      "dragalge-mega",
-      "froslass-mega",
-      "hawlucha-mega",
-      "scrafty-mega",
-      "chandelure-mega",
-      "falinks-mega",
-      "skarmory-mega",
-      "drampa-mega",
-      "zygarde-mega",
-      "chesnaught-mega",
-      "delphox-mega",
-      "greninja-mega",
-      "baxcalibur-mega",
-      "absol-mega-z",
-      "raichu-mega-x",
-      "raichu-mega-y",
-      "zeraora-mega",
-      "staraptor-mega",
-      "scovillain-mega",
-      "golisopod-mega",
-      "meowstic-mega",
-      "golurk-mega",
-      "crabominable-mega",
-      "glimmora-mega",
-      "tatsugiri-mega",
-      "darkrai-mega",
-      "magearna-mega",
-      "chimecho-mega",
-      "lucario-mega-z",
-      "baxcalibur-mega",
-  ];
+  "meganium-mega",
+  "emboar-mega",
+  "feraligatr-mega",
+  "barbaracle-mega",
+  "starmie-mega",
+  "floette-mega",
+  "floette-eternal",
+  "pyroar-mega",
+  "clefable-mega",
+  "scolipede-mega",
+  "victreebel-mega",
+  "excadrill-mega",
+  "eelektross-mega",
+  "dragonite-mega",
+  "malamar-mega",
+  "dragalge-mega",
+  "froslass-mega",
+  "hawlucha-mega",
+  "scrafty-mega",
+  "chandelure-mega",
+  "falinks-mega",
+  "skarmory-mega",
+  "drampa-mega",
+  "zygarde-mega",
+  "chesnaught-mega",
+  "delphox-mega",
+  "greninja-mega",
+  "baxcalibur-mega",
+  "absol-mega-z",
+  "raichu-mega-x",
+  "raichu-mega-y",
+  "zeraora-mega",
+  "staraptor-mega",
+  "scovillain-mega",
+  "golisopod-mega",
+  "meowstic-mega",
+  "golurk-mega",
+  "crabominable-mega",
+  "glimmora-mega",
+  "tatsugiri-mega",
+  "darkrai-mega",
+  "magearna-mega",
+  "chimecho-mega",
+  "lucario-mega-z",
+  "baxcalibur-mega",
+  "pikachu-rock-star",
+  "pikachu-belle",
+  "pikachu-pop-star",
+  "pikachu-phd",
+  "pikachu-libre",
+  "pikachu-cosplay",
+];
 
 export const FORM_LIMITS = {
 
   // ── Geração I ──────────────────────────────────────────────────────────────
   rby: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
 
   // ── Geração II ─────────────────────────────────────────────────────────────
   gsc: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
 
   // ── Geração III ────────────────────────────────────────────────────────────
   rse: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
   frlg: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
 
   // ── Geração IV ─────────────────────────────────────────────────────────────
   dpp: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
   hgss: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
 
   // ── Geração V ──────────────────────────────────────────────────────────────
   bw: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
   bw2: {
-    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle"],
-    excludeForms: [],
+    excludeKeywords: ["mega", "gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
+    excludeForms: [...ZA_MEGAS],
   },
 
   // ── Geração VI — megas existem, mas não todas ──────────────────────────────
   // X/Y tem megas, mas NÃO tem as megas exclusivas de ORAS (Latios, Latias, etc.)
   xy: {
-    excludeKeywords: ["gmax", "alola", "galar", "hisui", "paldea", "battle"],
+    excludeKeywords: ["gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       // Megas exclusivas de ORAS
       "greninja-ash",
@@ -136,7 +142,7 @@ export const FORM_LIMITS = {
   },
   // ORAS tem todas as megas de X/Y + as próprias
   oras: {
-    excludeKeywords: ["gmax", "alola", "galar", "hisui", "paldea", "battle"],
+    excludeKeywords: ["gmax", "alola", "galar", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS,
     ],
@@ -146,21 +152,21 @@ export const FORM_LIMITS = {
   // Sun/Moon tem formas alolan mas não tem gmax, galar, etc.
   // Ash-Greninja só existe em Sun/Moon — nos outros jogos pode excluir
   sm: {
-    excludeKeywords: ["gmax", "galar", "hisui", "paldea", "battle"],
+    excludeKeywords: ["gmax", "galar", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       , ...ZA_MEGAS,
     ],
     // Ash-Greninja EXISTE em SM — não exclui
   },
   usum: {
-    excludeKeywords: ["gmax", "galar", "hisui", "paldea", "battle"],
+    excludeKeywords: ["gmax", "galar", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS, // Ash-Greninja não disponível em USUM
     ],
   },
   letsgo: {
     // Let's Go só tem formas alolan e mega de Mewtwo — exclui todo o resto
-    excludeKeywords: ["gmax", "galar", "hisui", "paldea", "battle"],
+    excludeKeywords: ["gmax", "galar", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS,
     ],
@@ -168,20 +174,20 @@ export const FORM_LIMITS = {
 
   // ── Geração VIII ───────────────────────────────────────────────────────────
   swsh: {
-    excludeKeywords: ["mega", "alola", "hisui", "paldea", "battle"],
+    excludeKeywords: ["mega", "alola", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS,
     ],
   },
   bdsp: {
-    excludeKeywords: ["mega", "gmax", "galar", "hisui", "paldea", "battle"],
+    excludeKeywords: ["mega", "gmax", "galar", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS,
     ],
   },
   la: {
     // Legends: Arceus tem formas hisuias — mantém essas, exclui o resto
-    excludeKeywords: ["mega", "gmax", "galar", "paldea", "battle"],
+    excludeKeywords: ["mega", "gmax", "galar", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS,
     ],
@@ -189,16 +195,22 @@ export const FORM_LIMITS = {
 
   // ── Geração IX ─────────────────────────────────────────────────────────────
   sv: {
-    excludeKeywords: ["mega", "gmax", "alola", "hisui", "battle"],
+    excludeKeywords: ["mega", "gmax", "alola", "hisui", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash", ...ZA_MEGAS,
     ],
   },
   za: {
     // Legends: Z-A — megas voltam! Exclui formas regionais que não aparecem
-    excludeKeywords: ["gmax", "hisui", "paldea", "battle"],
+    excludeKeywords: ["gmax", "hisui", "paldea", "battle", "cap", "starter",],
     excludeForms: [
       "greninja-ash",
+      "pikachu-rock-star",
+      "pikachu-belle",
+      "pikachu-pop-star",
+      "pikachu-phd",
+      "pikachu-libre",
+      "pikachu-cosplay",
     ],
   },
 };

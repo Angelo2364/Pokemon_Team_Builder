@@ -15,19 +15,19 @@
 }
 
 body.dark {
-  --bg:        #0d0d0d;
-  --card:      #1a1a1a;
-  --card2:     #242424;
-  --border:    #333333;
+  --bg:        #000000;
+  --card:      #1c1c1c;
+  --card2:     #2a2a2a;
+  --border:    #3a3a3a;
   --text:      #e8e8e8;
-  --text-muted:#777777;
-  --input-bg:  #1a1a1a;
-  --btn-bg:    #1a1a1a;
+  --text-muted:#999999;
+  --input-bg:  #1c1c1c;
+  --btn-bg:    #1c1c1c;
   --btn-hover: #2a2a2a;
   --stat-bar:  #2a2a2a;
   --stat-fill: #7b8cde;
-  --move-opt:  #1a1a1a;
-  --panel-shadow: rgba(0,0,0,0.7);
+  --move-opt:  #1c1c1c;
+  --panel-shadow: rgba(0,0,0,0.8);
 }
 
 body {
@@ -252,21 +252,21 @@ body {
 .fire     { background: #EE8130; }
 .water    { background: #6390F0; }
 .grass    { background: #7AC74C; }
-.electric { background: #F7D02C; color: black; }
-.ice      { background: #96D9D6; color: black; }
+.electric { background: #F7D02C; color: #333; }
+.ice      { background: #96D9D6; color: #333; }
 .fighting { background: #C22E28; }
 .poison   { background: #A33EA1; }
-.ground   { background: #E2BF65; color: black; }
+.ground   { background: #E2BF65; color: #333; }
 .flying   { background: #A98FF3; }
 .psychic  { background: #F95587; }
-.bug      { background: #A6B91A; }
+.bug      { background: #A6B91A; color: #333; }
 .rock     { background: #B6A136; }
 .ghost    { background: #735797; }
 .dragon   { background: #6F35FC; }
-.dark     { background: #705746; }
-.steel    { background: #B7B7CE; color: black; }
+.type-badge.dark { background: #705746; } 
+.steel    { background: #B7B7CE; color: #333; }
 .fairy    { background: #D685AD; }
-.normal   { background: #A8A77A; }
+.normal   { background: #A8A77A; color: #333; }
 
 .stats-panel {
   position: absolute;
@@ -315,7 +315,7 @@ body {
 .stat-row span:first-child { text-align: right; font-weight: bold; font-size: 12px; }
 .stat-bar { height: 12px; background: var(--stat-bar); border-radius: 999px; overflow: hidden; }
 .stat-fill { height: 100%; background: var(--stat-fill); transition: width 0.3s; }
-.stat-value { text-align: left; font-weight: bold; font-size: 12px; }
+.stat-value { text-align: left; font-weight: bold; font-size: 12px; display: flex; align-items: center; }
 
 /* ── Moves panel ── */
 .moves-panel { padding-top: 6px; }
@@ -401,7 +401,7 @@ body {
   margin-bottom: 20px;
 }
 
-.analysis-hint { font-size: 12px; color: #888; margin: 0 0 12px; }
+.analysis-hint { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
 
 .analysis-types {
   display: flex;
@@ -619,6 +619,15 @@ body {
   padding: 16px 0;
 }
 
+.slot-nature-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
 /* ── Hidden Ability badge ── */
 .slot-ability-wrapper {
   flex: 1;
@@ -702,7 +711,27 @@ body {
 .pokemon-added {
   animation: pokemonAdded 0.4s ease;
 }
-/* ── Dark mode: nomes de golpes em branco ── */
+/* ── Section headings (regiões, dex) ── */
+.section-heading {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-count {
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+/* ── Dark mode: move tiles ── */
+body.dark .team-move-tile {
+  background: #2a2a2a;
+  color: #e8e8e8;
+}
 body.dark .move-option {
   color: #e8e8e8;
 }
@@ -715,7 +744,134 @@ body.dark select {
   background: #1a1a1a;
 }
 body.dark .stats-panel h3,
-body.dark .stats-panel span,
 body.dark .stats-panel p {
   color: var(--text);
+}
+
+/* ── Slot controls (ability, shiny, details) ── */
+.slot-ability-select {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  background: var(--card2);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.slot-ability-select:hover { border-color: #bbb; background: var(--btn-hover); }
+
+.slot-icon-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card2);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.slot-icon-btn:hover { border-color: #f0c040; color: #c8a000; background: #fffbe6; }
+.slot-icon-btn--active { background: #fffbe6; border-color: #f0c040; color: #c8a000; }
+
+.slot-detail-btn {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card2);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.slot-detail-btn:hover { background: #333; color: #fff; border-color: #333; }
+.slot-detail-btn--open { background: #333; color: #fff; border-color: #333; }
+
+/* ── Section headings ── */
+.section-heading {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.section-count {
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+/* ── Pokemon card tooltip ── */
+.pokemon-card::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: capitalize;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+}
+.pokemon-card:hover::after { opacity: 1; }
+
+/* ── Dark mode: texto dos type badges fica preto pra contrastar com fundo escuro da página ── */
+body.dark .type-badge { color: #111; }
+
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 20px;
+
+  padding: 12px 16px;
+
+  background: #2ecc71;
+  color: white;
+
+  border-radius: 10px;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+
+  z-index: 9999;
+
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

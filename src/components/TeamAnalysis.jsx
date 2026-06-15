@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ALL_TYPES, TYPE_COLORS, DARK_TEXT_TYPES, TYPE_CHART } from "../data/generations";
+import { ALL_TYPES, TYPE_COLORS, TYPE_CHART } from "../data/generations";
 import { computeWeaknesses } from "./TeamSlot";
 
 // Which types does a set of STAB types hit super-effectively?
@@ -92,25 +92,50 @@ export default function TeamAnalysis({ team, onHover }) {
 
   const Cell = ({ type, count, mode }) => {
     const bg = TYPE_COLORS[type] || "#888";
-    const txtColor = DARK_TEXT_TYPES.has(type) ? "#333" : "#fff";
-    const opacity = count >= 4 ? 1 : count >= 3 ? 0.85 : count >= 2 ? 0.7 : 0.5;
     const indices = mode === "weak" ? summary[type].weakIdx : summary[type].resistIdx;
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "default" }}
         onMouseEnter={() => onHover && onHover(new Set(indices))}
         onMouseLeave={() => onHover && onHover(null)}>
-        <span style={{
-          background: bg, color: txtColor, opacity,
-          padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: "bold",
-          textTransform: "capitalize", minWidth: 58, textAlign: "center", display: "block"
-        }}>
+        <span
+  className="type-badge"
+  style={{
+    background: bg,
+    minWidth: 58,
+    textAlign: "center",
+    display: "block",
+  }}
+>
           {type}
         </span>
-        <span style={{
-          fontSize: 12, fontWeight: "bold",
-          color: mode === "weak" ? "#c0392b" : "#27ae60"
-        }}>
+        <span style={{ fontSize: 12, fontWeight: "bold", color: mode === "weak" ? "#c0392b" : "#27ae60" }}>
           {mode === "weak" ? `×${count}` : `${count}✓`}
+        </span>
+      </div>
+    );
+  };
+
+  // Célula de cobertura STAB — com contador e ordenação
+  const STABCell = ({ type }) => {
+    const bg = TYPE_COLORS[type] || "#888";
+    const count = stabCoverageIdx[type]?.size ?? 0;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "default" }}
+        onMouseEnter={() => onHover && onHover(stabCoverageIdx[type])}
+        onMouseLeave={() => onHover && onHover(null)}>
+        <span
+          className="type-badge"
+          style={{
+            background: bg,
+            minWidth: 58,
+            textAlign: "center",
+            display: "block",
+          }}
+        >
+          {type}
+        </span>
+        <span style={{ fontSize: 12, fontWeight: "bold", color: "#2980b9" }}>
+          {count}✦
         </span>
       </div>
     );
@@ -122,7 +147,7 @@ export default function TeamAnalysis({ team, onHover }) {
         Análise do Time
       </h2>
 
-      <p style={{ fontSize: 16, color: "#888", marginTop: 0 }}>
+      <p style={{ fontSize: 16, color: "var(--text-muted)", marginTop: 0 }}>
         Passe o mouse sobre um tipo para mais detalhes.
       </p>
 
@@ -134,18 +159,14 @@ export default function TeamAnalysis({ team, onHover }) {
           const teamSTAB = [...new Set(active.flatMap(p => p.types))];
           const covered = teamSTABCoverage(teamSTAB);
           const missing = ALL_TYPES.filter(t => !covered.has(t));
+          const coveredSorted = [...covered].sort((a, b) =>
+            (stabCoverageIdx[b]?.size ?? 0) - (stabCoverageIdx[a]?.size ?? 0)
+          );
           return (
             <>
               <div className="analysis-types">
-                {[...covered].sort().map(t => (
-                  <span key={t} className={`type-badge ${t}`}
-                    style={{ cursor: "default" }}
-                    onMouseEnter={() => onHover && onHover(stabCoverageIdx[t])}
-                    onMouseLeave={() => onHover && onHover(null)}>
-                    {t}
-                  </span>
-                ))}
-                {!covered.size && <p style={{ fontSize: 13, color: "#888" }}>Nenhuma.</p>}
+                {coveredSorted.map(t => <STABCell key={t} type={t} />)}
+                {!covered.size && <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Nenhuma.</p>}
               </div>
               {missing.length > 0 && (
                 <div style={{ marginTop: 10 }}>
@@ -166,7 +187,7 @@ export default function TeamAnalysis({ team, onHover }) {
           <p className="analysis-hint">Quantos membros são fracos a cada tipo</p>
           <div className="analysis-types">
             {weaknesses.map(t => <Cell key={t} type={t} count={summary[t].weak} mode="weak" />)}
-            {!weaknesses.length && <p style={{ fontSize: 13, color: "#888" }}>Nenhuma!</p>}
+            {!weaknesses.length && <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Nenhuma!</p>}
           </div>
         </div>
         <div className="analysis-section">
@@ -174,7 +195,7 @@ export default function TeamAnalysis({ team, onHover }) {
           <p className="analysis-hint">Quantos membros resistem a cada tipo</p>
           <div className="analysis-types">
             {strengths.map(t => <Cell key={t} type={t} count={summary[t].resist + summary[t].immune} mode="resist" />)}
-            {!strengths.length && <p style={{ fontSize: 13, color: "#888" }}>Nenhuma.</p>}
+            {!strengths.length && <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Nenhuma.</p>}
           </div>
         </div>
       </div>
@@ -184,7 +205,7 @@ export default function TeamAnalysis({ team, onHover }) {
           <h3>💀 Conselhos de amigo</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
             {teamWarnings.map(t => (
-              <p key={t} style={{ margin: 0, fontSize: 13, color: "#555" }}>
+              <p key={t} style={{ margin: 0, fontSize: 13, color: "var(--text-muted)" }}>
                 {weaknessMessages[t]}
               </p>
             ))}

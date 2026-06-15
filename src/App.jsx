@@ -10,34 +10,85 @@ import "./App.css";
 // ── Cache global de dados de Pokémon — evita re-fetch ao re-adicionar ────────
 const POKEMON_CACHE = {};
 
+const PRE_FAIRY_GAMES = new Set([
+  "rby",
+  "gsc",
+  "rse",
+  "frlg",
+  "dpp",
+  "hgss",
+  "bw",
+  "bw2",
+]);
+
 // ── Tipos pré-Gen 6: Pokémon que ganharam Fairy em X/Y ───────────────────────
 const PRE_FAIRY_TYPES = {
-  "cleffa":     ["normal"],
-  "clefairy":   ["normal"],
-  "clefable":   ["normal"],
-  "igglybuff":  ["normal"],
+  "cleffa": ["normal"],
+  "clefairy": ["normal"],
+  "clefable": ["normal"],
+  "igglybuff": ["normal"],
   "jigglypuff": ["normal"],
   "wigglytuff": ["normal"],
-  "mime-jr":    ["psychic"],
-  "mr-mime":    ["psychic"],
-  "togepi":     ["normal"],
-  "togetic":    ["normal", "flying"],
-  "togekiss":   ["normal", "flying"],
-  "azurill":    ["normal"],
-  "marill":     ["water"],
-  "azumarill":  ["water"],
-  "snubbull":   ["normal"],
-  "granbull":   ["normal"],
-  "ralts":      ["psychic"],
-  "kirlia":     ["psychic"],
-  "gardevoir":  ["psychic"],
-  "mawile":     ["steel"],
-  "cottonee":   ["grass"],
+  "mime-jr": ["psychic"],
+  "mr-mime": ["psychic"],
+  "togepi": ["normal"],
+  "togetic": ["normal", "flying"],
+  "togekiss": ["normal", "flying"],
+  "azurill": ["normal"],
+  "marill": ["water"],
+  "azumarill": ["water"],
+  "snubbull": ["normal"],
+  "granbull": ["normal"],
+  "ralts": ["psychic"],
+  "kirlia": ["psychic"],
+  "gardevoir": ["psychic"],
+  "mawile": ["steel"],
+  "cottonee": ["grass"],
   "whimsicott": ["grass"],
 };
 function applyPreFairyTypes(pokemonName, types, activeGroup) {
-  if (!activeGroup || !activeGroup.genIds.every(id => id <= 5)) return types;
+  if (!activeGroup || !PRE_FAIRY_GAMES.has(activeGroup.id))
+    return types;
+
   return PRE_FAIRY_TYPES[pokemonName.toLowerCase()] ?? types;
+}
+
+function exportShowdown(team) {
+  return team
+    .filter(Boolean)
+    .map(pokemon => {
+      const lines = [];
+
+      lines.push(pokemon.name);
+
+      if (pokemon.selectedAbility) {
+        lines.push(`Ability: ${formatName2(pokemon.selectedAbility)}`);
+      }
+
+      if (pokemon.selectedNature) {
+        lines.push(`${pokemon.selectedNature} Nature`);
+      }
+
+      if (pokemon.isShiny) {
+        lines.push("Shiny: Yes");
+      }
+
+      pokemon.selectedMoves.forEach(move => {
+        lines.push(`- ${formatName2(move)}`);
+      });
+
+      return lines.join("\n");
+    })
+    .join("\n\n");
+}
+
+function formatName2(name) {
+  return name
+    .split("-")
+    .map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join(" ");
 }
 
 // Formata nomes: troca hífens por espaços e capitaliza cada palavra
@@ -81,12 +132,25 @@ function SearchableDropdown({ placeholder, onSearch, results, onSelect, loading,
   }
 
   return (
-    <div ref={ref} style={{ position: "relative", flex: 1, minWidth: 180 }}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        border: "1px solid #ccc", borderRadius: 8, padding: "6px 10px",
-        background: "white", cursor: "text"
+    <div
+      ref={ref}
+      style={{
+        position: "relative",
+        width: 180,
       }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          minHeight: 30,
+          border: "1px solid var(--border)",
+          borderRadius: 8,
+          padding: "1px 10px",
+          background: "var(--card)",
+          cursor: "text"
+        }}
         onClick={() => { if (selectedName) { onSelect(null); setQuery(""); } }}>
         {selectedName ? (
           <>
@@ -94,16 +158,28 @@ function SearchableDropdown({ placeholder, onSearch, results, onSelect, loading,
             <span style={{ fontSize: 11, color: "#e74c3c", cursor: "pointer", fontWeight: "bold" }}>✕</span>
           </>
         ) : (
-          <input style={{ border: "none", outline: "none", flex: 1, fontSize: 13, background: "transparent" }}
-            placeholder={placeholder} value={query}
-            onChange={e => handleQuery(e.target.value)} onClick={e => e.stopPropagation()} />
+          <input
+            style={{
+              border: "none",
+              outline: "none",
+              flex: 1,
+              fontSize: 13,
+              background: "transparent",
+              padding: 0,
+              margin: 0,
+            }}
+            placeholder={placeholder}
+            value={query}
+            onChange={e => handleQuery(e.target.value)}
+            onClick={e => e.stopPropagation()}
+          />
         )}
         {loading && <span style={{ fontSize: 11, color: "#888" }}>…</span>}
       </div>
       {open && results.length > 0 && (
         <div style={{
           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
-          background: "white", border: "1px solid #ccc", borderRadius: 8,
+          background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8,
           boxShadow: "0 4px 12px rgba(0,0,0,.15)", zIndex: 500, maxHeight: 220, overflowY: "auto"
         }}>
           {results.map(r => (
@@ -112,7 +188,7 @@ function SearchableDropdown({ placeholder, onSearch, results, onSelect, loading,
                 padding: "8px 12px", fontSize: 13, cursor: "pointer",
                 textTransform: "capitalize", borderBottom: "1px solid #f0f0f0"
               }}
-              onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
               onMouseLeave={e => e.currentTarget.style.background = ""}>
               {formatName(r.name)}
             </div>
@@ -127,6 +203,12 @@ function SearchableDropdown({ placeholder, onSearch, results, onSelect, loading,
 export default function App() {
   const [started, setStarted] = useState(false);
   const [setupGame, setSetupGame] = useState("all");
+  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
+
+  useEffect(() => {
+    document.body.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
 
   const [team, setTeam] = useState(Array(6).fill(null));
   const [pendingGame, setPendingGame] = useState(null);
@@ -164,7 +246,17 @@ export default function App() {
 
   const teamSentinelRef = useRef(null);
 
+  const [toast, setToast] = useState("");
+
   const handleOverlayClick = useCallback(() => setDetailsPokemon(-1), []);
+
+  function showToast(message) {
+    setToast(message);
+
+    setTimeout(() => {
+      setToast("");
+    }, 2500);
+  }
 
   // Sticky inteligente: ativa só quando o sentinel (abaixo do time) sai da viewport
   useEffect(() => {
@@ -387,6 +479,7 @@ export default function App() {
       sprite: d.sprites.front_default,
       shinySprite: d.sprites.front_shiny,
       isShiny: false,
+      selectedNature: "",
       types: applyPreFairyTypes(d.name, d.types.map(x => x.type.name), activeGroup),
       abilities: d.abilities.map(a => a.ability.name),
       selectedAbility: d.abilities[0]?.ability?.name ?? "",
@@ -416,7 +509,7 @@ export default function App() {
   // ── Setup screen ──────────────────────────────────────────────────────────
   if (!started) {
     return (
-      <SetupScreen onStart={startGame} />
+      <SetupScreen onStart={startGame} dark={dark} setDark={setDark} />
     );
   }
 
@@ -436,12 +529,12 @@ export default function App() {
           display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
         }}>
           <div style={{
-            background: "white", borderRadius: 16, padding: "28px 28px 24px",
+            background: "var(--card)", borderRadius: 16, padding: "28px 28px 24px",
             width: 320, boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
             display: "flex", flexDirection: "column", gap: 12,
           }}>
             <p style={{ margin: 0, fontWeight: "bold", fontSize: 15 }}>Trocar de jogo?</p>
-            <p style={{ margin: 0, fontSize: 13, color: "#666", lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
               Trocar o jogo vai limpar seu time atual. Tem certeza?
             </p>
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -468,14 +561,44 @@ export default function App() {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {hasTeam && <>
-            <button className="action-btn danger" onClick={e => { e.stopPropagation(); clearTeam(); }}>
+
+            <button
+              className="action-btn danger"
+              onClick={e => {
+                e.stopPropagation();
+                clearTeam();
+                showToast("✓ Time limpo com sucesso");
+              }}
+
+            >
               🗑 Limpar time
             </button>
+
+            <button
+              className="action-btn"
+              onClick={e => {
+                e.stopPropagation();
+
+                const showdown = exportShowdown(team);
+
+                navigator.clipboard.writeText(showdown);
+
+                showToast("✓ Time copiado para a área de transferência");
+              }}
+            >
+              ↱ Exportar time
+            </button>
+
             <button className={`action-btn ${showAnalysis ? "active" : ""}`}
               onClick={e => { e.stopPropagation(); setShowAnalysis(v => !v); }}>
               📊 {showAnalysis ? "Ocultar" : "Análise do time"}
             </button>
+
           </>}
+          <button className="action-btn" onClick={e => { e.stopPropagation(); setDark(v => !v); }}
+            title={dark ? "Modo claro" : "Modo escuro"}>
+            {dark ? "☀️" : "🌙"}
+          </button>
         </div>
       </div>
 
@@ -578,7 +701,7 @@ export default function App() {
 
           <label style={{
             display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer",
-            background: "white", padding: "7px 12px", borderRadius: 8, border: "1px solid #ccc", whiteSpace: "nowrap"
+            background: "var(--card)", padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)", whiteSpace: "nowrap"
           }}>
             <input type="checkbox" checked={hideLegendary}
               onChange={e => setHideLegendary(e.target.checked)} />
@@ -587,11 +710,11 @@ export default function App() {
 
           <button title="Limpar filtros" onClick={e => { e.stopPropagation(); clearFilters(); }}
             style={{
-              padding: "7px 11px", border: "1px solid #ccc", borderRadius: 8, background: "white",
-              cursor: "pointer", fontSize: 15, lineHeight: 1, transition: "background 0.15s"
+              padding: "7px 11px", border: "1px solid var(--border)", borderRadius: 8, background: "var(--card)",
+              cursor: "pointer", fontSize: 15, lineHeight: 1, transition: "background 0.15s", color: "var(--text)"
             }}
-            onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
-            onMouseLeave={e => e.currentTarget.style.background = "white"}>
+            onMouseEnter={e => e.currentTarget.style.background = "var(--hover)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--card)"}>
             ↺
           </button>
         </div>
@@ -636,6 +759,11 @@ export default function App() {
           ))
         ) : null}
       </div>
+      {toast && (
+        <div className="toast">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
@@ -660,7 +788,7 @@ const SETUP_GENS = [
     label: "Geração III",
     games: [
       { id: "rse", name: "Ruby / Sapphire / Emerald", sprite: 384 },
-      { id: "frlg", name: "FireRed / LeafGreen", sprite: 150 },
+      { id: "frlg", name: "FireRed / LeafGreen", sprite: 6 },
     ],
   },
   {
@@ -709,13 +837,22 @@ const SETUP_GENS = [
   },
 ];
 
-function SetupScreen({ onStart }) {
+function SetupScreen({ onStart, dark, setDark }) {
   function select(id) {
     onStart(id);
   }
 
   return (
     <div className="setup-screen">
+      {/* Botão dark mode — canto superior direito */}
+      <button
+        className="action-btn"
+        onClick={() => setDark(v => !v)}
+        title={dark ? "Modo claro" : "Modo escuro"}
+        style={{ position: "fixed", top: 16, right: 16 }}
+      >
+        {dark ? "☀️" : "🌙"}
+      </button>
       <h1
         style={{
           margin: "0 0 0px",
@@ -745,14 +882,14 @@ function SetupScreen({ onStart }) {
         onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
         onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
         style={{
-          background: "white",
+          background: "var(--card)",
           borderRadius: 12,
-          border: "1px solid #ddd",
+          border: "1px solid var(--border)",
           padding: "16px 14px",
           cursor: "pointer",
           position: "relative",
           overflow: "hidden",
-          minHeight: 100, // mais alto
+          minHeight: 100,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -763,41 +900,19 @@ function SetupScreen({ onStart }) {
           marginTop: 10,
         }}
       >
-        <span
-          style={{
-            fontSize: 16,
-            fontWeight: 600,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <span style={{ fontSize: 16, fontWeight: 600, position: "relative", zIndex: 1 }}>
           Todos os jogos
         </span>
-
-        <span
-          style={{
-            fontSize: 13,
-            color: "#888",
-            marginTop: 4,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <span style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, position: "relative", zIndex: 1 }}>
           Sem restrição de geração
         </span>
-
         <img
           src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10147.png"
           alt=""
           style={{
-            position: "absolute",
-            right: -18,
-            bottom: 0,
-            width: 100,
-            height: 100,
-            objectFit: "contain",
-            imageRendering: "pixelated",
-            pointerEvents: "none",
+            position: "absolute", right: -18, bottom: 0,
+            width: 100, height: 100, objectFit: "contain",
+            imageRendering: "pixelated", pointerEvents: "none",
           }}
         />
       </div>
@@ -807,7 +922,7 @@ function SetupScreen({ onStart }) {
         {SETUP_GENS.map(gen => (
           <div key={gen.label} style={{ marginBottom: 10 }}>
             <div style={{
-              fontSize: 10, fontWeight: 500, color: "#aaa",
+              fontSize: 10, fontWeight: 500, color: "var(--text-muted)",
               textTransform: "uppercase", letterSpacing: "0.6px",
               marginBottom: 5, marginLeft: 2,
             }}>
@@ -823,23 +938,17 @@ function SetupScreen({ onStart }) {
                     onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
                     onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                     style={{
-                      flex: 1, background: "white", borderRadius: 12,
-                      border: "1px solid #ddd", padding: "12px 10px 10px",
+                      flex: 1, background: "var(--card)", borderRadius: 12,
+                      border: "1px solid var(--border)", padding: "12px 10px 10px",
                       cursor: "pointer", position: "relative", overflow: "hidden",
                       minHeight: 100, display: "flex", flexDirection: "column",
-                      justifyContent: "center",gap: 3, boxSizing: "border-box", transition: "transform 0.1s",
+                      justifyContent: "center", gap: 3, boxSizing: "border-box", transition: "transform 0.1s",
                     }}
                   >
-                    <span
-                      style={{
-                        whiteSpace: "pre-line",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        lineHeight: 1.3,
-                        position: "relative",
-                        zIndex: 1,
-                      }}
-                    >
+                    <span style={{
+                      whiteSpace: "pre-line", fontSize: 13, fontWeight: 600,
+                      lineHeight: 1.3, position: "relative", zIndex: 1,
+                    }}>
                       {game.name}
                     </span>
                     <img src={spriteUrl} alt=""
@@ -859,4 +968,5 @@ function SetupScreen({ onStart }) {
       </div>
     </div>
   );
+
 }

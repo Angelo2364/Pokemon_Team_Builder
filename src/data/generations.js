@@ -60,7 +60,7 @@ export const GAME_VERSION_GROUPS = {
   usum: ["ultra-sun-ultra-moon"],
   lgpe: ["lets-go-pikachu-eevee"],
   swsh: ["sword-shield"],
-  bdsp: ["brilliant-diamond-and-shining-pearl"],
+  bdsp: ["brilliant-diamond-and-shining-pearl", "scarlet-violet", "sword-shield", "diamond-pearl", "platinum"],
   la: ["legends-arceus"],
   sv: ["scarlet-violet"],
   za: ["legends-z-a"],

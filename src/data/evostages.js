@@ -500,6 +500,7 @@ export const FINAL = new Set([
   "dugtrio",
   "persian",
   "golduck",
+  "primeape",
   "arcanine",
   "poliwrath",
   "alakazam",
