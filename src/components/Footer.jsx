@@ -96,12 +96,6 @@ export default function Footer() {
     <>
       <footer className="site-footer">
         <p>
-          Se você achar este projeto útil, considere fazer uma{" "}
-          <button className="footer-donation-btn" onClick={() => setShowPix(true)}>
-            doação via Pix
-          </button>{" "}
-        </p>
-        <p>
           Por favor, reporte bugs ou deixe feedback em{" "}
           <a href={GITHUB_ISSUE_LINK} target="_blank" rel="noopener noreferrer" className="footer-link">
             abrir uma issue no GitHub
