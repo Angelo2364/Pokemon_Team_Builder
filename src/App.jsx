@@ -6,6 +6,8 @@ import { GAME_DEX } from "./data/gamedex";
 import { STAGE1, STAGE2, FINAL } from "./data/evostages";
 import Footer from "./components/Footer";
 import "./App.css";
+import useSavedTeams from "./hooks/useSavedTeams";
+import SavedTeamsScreen from "./components/SavedTeamsScreen";
 
 
 // ── Cache global de dados de Pokémon — evita re-fetch ao re-adicionar ────────
@@ -230,15 +232,15 @@ export default function App() {
   const [legendaryIds, setLegendaryIds] = useState(null);
   const [highlightSlots, setHighlightSlots] = useState(null);
 
-useEffect(() => {
-  function clearOnScroll() {
-    setHighlightSlots(null);
-  }
-  window.addEventListener("scroll", clearOnScroll, { passive: true });
-  return () => window.removeEventListener("scroll", clearOnScroll);
-}, []);
+  useEffect(() => {
+    function clearOnScroll() {
+      setHighlightSlots(null);
+    }
+    window.addEventListener("scroll", clearOnScroll, { passive: true });
+    return () => window.removeEventListener("scroll", clearOnScroll);
+  }, []);
 
-const [moveSearchResults, setMoveSearchResults] = useState([]);
+  const [moveSearchResults, setMoveSearchResults] = useState([]);
   const [abilitySearchResults, setAbilitySearchResults] = useState([]);
   const [selectedMove, setSelectedMove] = useState(null);
   const [selectedAbilityFilter, setSelectedAbilityFilter] = useState(null);
@@ -256,6 +258,11 @@ const [moveSearchResults, setMoveSearchResults] = useState([]);
   const teamSentinelRef = useRef(null);
 
   const [toast, setToast] = useState("");
+
+  const [showSavedTeams, setShowSavedTeams] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveTeamName, setSaveTeamName] = useState("");
+  const { savedTeams, saveTeam, deleteTeam, loadTeam } = useSavedTeams();
 
   const handleOverlayClick = useCallback(() => setDetailsPokemon(-1), []);
 
@@ -277,7 +284,7 @@ const [moveSearchResults, setMoveSearchResults] = useState([]);
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [started]);
+  }, [started, showSavedTeams]);
 
   useEffect(() => { setFilterVersion("all"); }, [filterGame]);
 
@@ -515,6 +522,27 @@ const [moveSearchResults, setMoveSearchResults] = useState([]);
     setSelectedAbilityFilter(null); setAbilityFilteredIds(null); setAbilitySearchResults([]);
   }
 
+  // ── Tela de times salvos ───────────────────────────────────────────────────
+  if (showSavedTeams) {
+    return (
+      <SavedTeamsScreen
+        savedTeams={savedTeams}
+        onDelete={deleteTeam}
+        onLoad={(id) => {
+          const entry = savedTeams.find(t => t.id === id);
+          const loaded = loadTeam(id);
+          if (loaded) {
+            setTeam(loaded);
+            if (entry?.filterGame) setFilterGame(entry.filterGame);
+            setShowSavedTeams(false);
+            window.scrollTo(0, 0);
+          }
+        }}
+        onBack={() => { setShowSavedTeams(false); window.scrollTo(0, 0); }}
+      />
+    );
+  }
+
   // ── Setup screen ──────────────────────────────────────────────────────────
   if (!started) {
     return (
@@ -569,8 +597,10 @@ const [moveSearchResults, setMoveSearchResults] = useState([]);
           <h1 style={{ margin: 0 }}>Seu Time</h1>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {hasTeam && <>
 
+
+
+          {hasTeam && <>
             <button
               className="action-btn danger"
               onClick={e => {
@@ -598,14 +628,96 @@ const [moveSearchResults, setMoveSearchResults] = useState([]);
               ↱ Exportar time
             </button>
 
-            <button className={`action-btn ${showAnalysis ? "active" : ""}`}
-              onClick={e => { e.stopPropagation(); setShowAnalysis(v => !v); }}>
+            {/* Botão salvar — abre modal de nome */}
+
+            {saveModalOpen ? (
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  autoFocus
+                  placeholder="Nome do time..."
+                  value={saveTeamName}
+                  onChange={e => setSaveTeamName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      saveTeam(team, saveTeamName || "Meu Time");
+                      setSaveTeamName("");
+                      setSaveModalOpen(false);
+                      showToast("✓ Time salvo!");
+                    }
+                    if (e.key === "Escape") setSaveModalOpen(false);
+                  }}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    border: "1px solid var(--border)",
+                    background: "var(--card)",
+                    color: "var(--text)",
+                    fontSize: 13,
+                    width: 150,
+                  }}
+                />
+                <button
+                  className="action-btn"
+                  onClick={() => {
+                    saveTeam(team, saveTeamName || "Meu Time", filterGame);
+                    setSaveTeamName("");
+                    setSaveModalOpen(false);
+                    showToast("✓ Time salvo!");
+                  }}
+                >
+                  ✓
+                </button>
+                <button
+                  className="action-btn"
+                  onClick={() => setSaveModalOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                className="action-btn"
+                onClick={e => {
+                  e.stopPropagation();
+                  setSaveModalOpen(true);
+                }}
+              >
+                💾 Salvar time
+              </button>
+            )}
+          </>}
+
+          {/* Sempre visível */}
+          <button
+            className="action-btn"
+            onClick={e => {
+              e.stopPropagation();
+              setShowSavedTeams(true);
+            }}
+          >
+            📂 Times salvos {savedTeams.length > 0 && `(${savedTeams.length})`}
+          </button>
+
+          {hasTeam && (
+            <button
+              className={`action-btn ${showAnalysis ? "active" : ""}`}
+              onClick={e => {
+                e.stopPropagation();
+                setShowAnalysis(v => !v);
+              }}
+            >
               📊 {showAnalysis ? "Ocultar" : "Análise do time"}
             </button>
+          )}
 
-          </>}
-          <button className="action-btn" onClick={e => { e.stopPropagation(); setDark(v => !v); }}
-            title={dark ? "Modo claro" : "Modo escuro"}>
+          <button
+            className="action-btn"
+            onClick={e => {
+              e.stopPropagation();
+              setDark(v => !v);
+            }}
+            title={dark ? "Modo claro" : "Modo escuro"}
+          >
             {dark ? "☀️" : "🌙"}
           </button>
         </div>
@@ -885,9 +997,9 @@ function SetupScreen({ onStart, dark, setDark }) {
           lineHeight: 1.2,
         }}
       >
-        Seja bem-vindo! Escolha um jogo e comece a planejar seu time! - V1.0
+        Seja bem-vindo! Escolha um jogo e comece a planejar seu time! - V1.1
       </p>
-      
+
 
       {/* Todos os jogos */}
       <div
@@ -978,8 +1090,8 @@ function SetupScreen({ onStart, dark, setDark }) {
             </div>
           </div>
         ))}
-    
-      <Footer />
+
+        <Footer />
 
       </div>
     </div>
