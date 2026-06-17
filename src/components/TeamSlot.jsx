@@ -760,7 +760,7 @@ function TeamSlot({
           {isAlternateForm && pokemon.baseFormName && (
             <div className="forms-row" onClick={e => e.stopPropagation()}>
               <button className="form-btn"
-                style={{ background: "#fff0f0", borderColor: "#e74c3c", color: "#c0392b", fontWeight: "bold" }}
+                style={{ background: "var(--card);", borderColor: "#e74c3c", color: "#c0392b", fontWeight: "bold" }}
                 onClick={() => switchFormKeepingBase(pokemon.baseFormName, true)}>
                 ↩ Forma base
               </button>

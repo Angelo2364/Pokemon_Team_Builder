@@ -481,7 +481,8 @@ body {
   transition: transform 0.15s;
   color: var(--text);
 }
-.pokemon-card:hover { transform: scale(1.08); }
+.pokemon-card:hover { transform: scale(1.00); }
+.pokemon-list-sprite:hover { transform: scale(1.2); }
 .pokemon-list-sprite { width: 96px; height: 96px; object-fit: contain; }
 
 /* ── Evolution controls ── */
@@ -531,7 +532,8 @@ body {
   text-transform: capitalize;
   transition: background 0.1s;
 }
-.form-btn:hover { background: #fbd4ff; }
+body.dark .form-btn:hover { background: #440000; }
+.form-btn:hover { background: #fae0e0; }
 
 /* ── Stats panel abrindo pra esquerda (slots 4 e 5) ── */
 .stats-panel--left {
