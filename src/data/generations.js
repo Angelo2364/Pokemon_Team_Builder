@@ -513,6 +513,8 @@ export const GAME_GROUPS = [
     },
   },
 
+  { id: "letsgo", name: "Let's Go Pikachu / Let's Go Eevee", genIds: [1] },
+
   {
     id: "swsh", name: "Sword / Shield", genIds: [1, 2, 3, 4, 5, 6, 7, 8],
     exclusives: {
@@ -563,7 +565,7 @@ export const GAME_GROUPS = [
 
   { id: "la", name: "Legends: Arceus", genIds: [1, 2, 3, 4] },
 
-  { id: "letsgo", name: "Let's Go Pikachu / Let's Go Eevee", genIds: [1] },
+  
 
   {
     id: "sv", name: "Scarlet / Violet", genIds: [1, 2, 3, 4, 5, 6, 7, 8, 9],
