@@ -545,57 +545,111 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
   );
 }
 
+// ── Mapa estático version_group → versions (necessário pois a PokeAPI dá a
+// descrição da dex por "version" individual, mas o filtro do app trabalha
+// com "version_group"). Lista fixa, não muda com o tempo. ────────────────────
+const VERSION_GROUP_TO_VERSIONS = {
+  "red-blue": ["red", "blue"],
+  "yellow": ["yellow"],
+  "gold-silver": ["gold", "silver"],
+  "crystal": ["crystal"],
+  "ruby-sapphire": ["ruby", "sapphire"],
+  "emerald": ["emerald"],
+  "firered-leafgreen": ["firered", "leafgreen"],
+  "diamond-pearl": ["diamond", "pearl"],
+  "platinum": ["platinum"],
+  "heartgold-soulsilver": ["heartgold", "soulsilver"],
+  "black-white": ["black", "white"],
+  "black-2-white-2": ["black-2", "white-2"],
+  "x-y": ["x", "y"],
+  "omega-ruby-alpha-sapphire": ["omega-ruby", "alpha-sapphire"],
+  "sun-moon": ["sun", "moon"],
+  "ultra-sun-ultra-moon": ["ultra-sun", "ultra-moon"],
+  "lets-go-pikachu-lets-go-eevee": ["lets-go-pikachu", "lets-go-eevee"],
+  "sword-shield": ["sword", "shield"],
+  "brilliant-diamond-shining-pearl": ["brilliant-diamond", "shining-pearl"],
+  "legends-arceus": ["legends-arceus"],
+  "scarlet-violet": ["scarlet", "violet"],
+};
+
 // ── PokedexDesc — descrição da Pokédex, só busca/renderiza ao clicar ────────
-function PokedexDesc({ pokemonId }) {
+function PokedexDesc({ pokemonId, filterGame }) {
   const [open, setOpen] = useState(false);
-  const [desc, setDesc] = useState(null);
+  const [entries, setEntries] = useState(null); // todas as entradas em inglês, cacheadas
   const [loading, setLoading] = useState(false);
 
   // Se o pokemon mudar (troca de slot/forma), fecha e descarta o cache
   useEffect(() => {
     setOpen(false);
-    setDesc(null);
+    setEntries(null);
   }, [pokemonId]);
 
   function handleToggle(e) {
     e.stopPropagation();
     if (open) { setOpen(false); return; }
     setOpen(true);
-    if (desc !== null) return; // já carregado, não busca de novo
+    if (entries !== null) return; // já carregado, não busca de novo
     setLoading(true);
     fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`)
       .then(r => r.json())
       .then(d => {
-        const entry = d.flavor_text_entries?.find(e => e.language.name === "en");
-        setDesc(entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.");
+        const en = (d.flavor_text_entries || [])
+          .filter(e => e.language.name === "en")
+          .map(e => ({ text: e.flavor_text.replace(/\f/g, " "), version: e.version.name }));
+        setEntries(en);
         setLoading(false);
       })
-      .catch(() => { setDesc("Erro ao carregar."); setLoading(false); });
+      .catch(() => { setEntries([]); setLoading(false); });
+  }
+
+  // Versões individuais que correspondem ao jogo/geração selecionado no app
+  const wantedVersions = filterGame && filterGame !== "all"
+    ? (GAME_VERSION_GROUPS[filterGame] || []).flatMap(vg => VERSION_GROUP_TO_VERSIONS[vg] || [])
+    : null;
+
+  let desc = null;
+  let usedFallback = false;
+  if (entries && entries.length) {
+    const match = wantedVersions ? entries.find(e => wantedVersions.includes(e.version)) : null;
+    if (match) desc = match.text;
+    else { desc = entries[0].text; usedFallback = !!wantedVersions; }
+  } else if (entries) {
+    desc = "Sem descrição disponível.";
   }
 
   return (
-    <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
-      <button
-        type="button"
-        className="slot-ability-select"
-        style={{ cursor: "pointer", textAlign: "left", width: "100%" }}
-        onClick={handleToggle}
-      >
-        {open ? "▲ Pokedex do pokemon" : "▼ Pokedex do pokemon"}
-      </button>
+    <>
+      <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
+        <button
+          type="button"
+          className="slot-ability-select"
+          style={{ cursor: "pointer", textAlign: "left", width: "100%" }}
+          onClick={handleToggle}
+        >
+          {open ? "▲ Pokedex do pokemon" : "▼ Pokedex do pokemon"}
+        </button>
+      </div>
 
       {open && (
         <div style={{
           marginTop: 8, padding: "10px 12px", borderRadius: 10,
           background: "var(--card2)", border: "1px solid var(--border)",
         }}>
-          {loading
-            ? <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Carregando...</span>
-            : <span style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{desc}</span>
-          }
+          {loading ? (
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Carregando...</span>
+          ) : (
+            <>
+              <span style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{desc}</span>
+              {usedFallback && (
+                <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 6 }}>
+                  Sem entrada pra esse jogo, mostrando outra versão.
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -955,7 +1009,7 @@ function TeamSlot({
                 </div>
 
                 <div style={{ marginTop: 8 }}>
-                  <PokedexDesc pokemonId={pokemon.baseFormId || pokemon.id} />
+                  <PokedexDesc pokemonId={pokemon.baseFormId || pokemon.id} filterGame={filterGame} />
                 </div>
 
                 <AbilityDesc abilityName={pokemon.selectedAbility} />
