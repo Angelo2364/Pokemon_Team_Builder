@@ -477,7 +477,7 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
       {/* Move list */}
       <div className="move-list">
         {filtered.length === 0 && (
-          <p style={{ fontSize: 11, color: "#aaa", textAlign: "center", margin: "8px 0" }}>
+          <p style={{ fontSize: 11, color: "#ff0000", textAlign: "center", margin: "8px 0" }}>
             Nenhum golpe disponível nesta versão.
           </p>
         )}
@@ -491,9 +491,9 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
             <div key={m.name}
               className={`move-option ${active ? "active" : ""} ${!active && selectedMoves.length >= 4 ? "disabled" : ""}`}
               style={mt ? {
-                background: active ? "#222" : bg + "33",
+                background: active ? "var(--card2)" : bg + "33",
                 borderLeft: `5px solid ${bg}`,
-                color: active ? "#fff" : undefined,
+                color: "var(--text)",
               } : {}}
               onClick={e => { e.stopPropagation(); toggleMove(m.name); }}>
               {/* Linha principal */}
@@ -507,12 +507,14 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
                 <span style={{ textTransform: "capitalize", flex: 1, fontSize: 12 }}>
                   {m.name.replace(/-/g, " ")}
                 </span>
-                <span style={{ fontSize: 11, color: active ? "#aaa" : "#646464", flexShrink: 0, marginRight: 2 }}>
-                  {det ? (det.power ? `Pwr:${det.power}` : "Pwr:—") : ""}
-                </span>
-                <span style={{ fontSize: 11, color: active ? "#aaa" : "#646464", flexShrink: 0, marginRight: 2 }}>
+                {/*Accuraccy e Power*/}
+                <span style={{ fontSize: 11, color: "#727272", flexShrink: 0, marginRight: 2 }}>
                   {det ? (det.accuracy ? `Acc:${det.accuracy}` : "Acc:—") : ""}
                 </span>
+                <span style={{ fontSize: 11, color: "#727272", flexShrink: 0, marginRight: 2 }}>
+                  {det ? (det.power ? `Pwr:${det.power}` : "Pwr:—") : ""}
+                </span>
+
                 <LearnBadge method={m.method} level={m.level} />
                 {det?.desc && (
                   <button
@@ -530,8 +532,8 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
               {isExpanded && det?.desc && (
                 <p style={{
                   margin: "5px 0 2px", fontSize: 13, lineHeight: 1.5,
-                  color: active ? "#ddd" : "#555",
-                  borderTop: `1px solid ${active ? "#444" : "#ddd"}`,
+                  color: "var(--text)",
+                  borderTop: `1px solid ${active ? "var(--text)" : "var(--text)"}`,
                   paddingTop: 4,
                 }}>
                   {det.desc}
@@ -572,47 +574,186 @@ const VERSION_GROUP_TO_VERSIONS = {
   "scarlet-violet": ["scarlet", "violet"],
 };
 
+// ── Formas regionais → jogos onde aquela forma específica existe. Usado como
+// heurística pra tentar achar a entrada certa da dex, já que a PokeAPI mistura
+// as descrições de formas diferentes da mesma espécie sem diferenciá-las
+// (ver https://github.com/PokeAPI/pokeapi/issues/533 — limitação conhecida e
+// nunca totalmente resolvida pela própria API). Megas e Gmax ficam de fora de
+// propósito: pra essas, mantemos a dex original da espécie base. ───────────
+const REGIONAL_FORM_VERSIONS = {
+  "-alola": ["sun", "moon", "ultra-sun", "ultra-moon", "lets-go-pikachu", "lets-go-eevee"],
+  "-galar": ["sword", "shield"],
+  "-hisui": ["legends-arceus"],
+  "-paldea": ["scarlet", "violet"],
+};
+
+function getRegionalVersions(pokemonName) {
+  const n = (pokemonName || "").toLowerCase();
+  for (const suffix in REGIONAL_FORM_VERSIONS) {
+    if (n.includes(suffix)) return REGIONAL_FORM_VERSIONS[suffix];
+  }
+  return null;
+}
+
+// ── Labels de região por sufixo de forma regional e por geração de origem ───
+// (usados pro toggle manual de versão da dex — ver PokedexDesc abaixo)
+const REGION_LABEL_BY_SUFFIX = {
+  "-alola": "Alola",
+  "-galar": "Galar",
+  "-hisui": "Hisui",
+  "-paldea": "Paldea",
+};
+const REGION_BY_GENERATION = {
+  "generation-i": "Kanto",
+  "generation-ii": "Johto",
+  "generation-iii": "Hoenn",
+  "generation-iv": "Sinnoh",
+  "generation-v": "Unova",
+  "generation-vi": "Kalos",
+  "generation-vii": "Alola",
+  "generation-viii": "Galar",
+  "generation-ix": "Paldea",
+};
+
 // ── PokedexDesc — descrição da Pokédex, só busca/renderiza ao clicar ────────
+// A PokeAPI não separa a flavor text por forma (ex: Ninetales normal e
+// Ninetales de Alola caem nas mesmas entradas da espécie, diferenciadas só
+// pela versão do jogo — limitação conhecida, ver
+// https://github.com/PokeAPI/pokeapi/issues/533, sem solução automática).
+// Então, quando a espécie tem uma forma regional conhecida (Alola/Galar/
+// Hisui/Paldea), mostramos um toggle manual pra trocar entre a descrição da
+// forma original e a da forma regional.
 function PokedexDesc({ pokemonId, filterGame }) {
   const [open, setOpen] = useState(false);
-  const [entries, setEntries] = useState(null); // todas as entradas em inglês, cacheadas
+  // data cacheado: { entries, formSlug, varieties, generationName } —
+  // formSlug e varieties vêm direto da PokeAPI (ex: "ninetales-alola"), não
+  // do nome que o app guarda, porque esse pode estar como nome de exibição
+  // traduzido ("Ninetales de Alola") e não bate com o padrão "-alola"/etc.
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  // versão escolhida manualmente no toggle ("base", "-alola", "-galar"...)
+  // — null significa que ainda não foi escolhida, usa o default automático.
+  const [selectedTab, setSelectedTab] = useState(null);
 
-  // Se o pokemon mudar (troca de slot/forma), fecha e descarta o cache
+  // Se a forma/pokemon mudar (troca de slot ou de forma alternativa), fecha
+  // e descarta o cache — pokemonId aqui é o id da VARIANTE atual (não o da
+  // espécie), então isso muda de fato a cada troca de forma.
   useEffect(() => {
     setOpen(false);
-    setEntries(null);
+    setData(null);
+    setLoadError(false);
+    setSelectedTab(null);
   }, [pokemonId]);
 
   function handleToggle(e) {
     e.stopPropagation();
     if (open) { setOpen(false); return; }
     setOpen(true);
-    if (entries !== null) return; // já carregado, não busca de novo
+    if (data !== null) return; // já carregado, não busca de novo
     setLoading(true);
-    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`)
+    setLoadError(false);
+    // Busca /pokemon/{id}/ primeiro pra pegar o slug certo e o link da
+    // espécie — não dá pra confiar em nomes/IDs internos do app porque
+    // formas alternativas adicionadas direto pela dex do jogo nem sempre
+    // chegam com esses campos preenchidos do jeito esperado. O que a
+    // própria PokeAPI devolve aqui (p.name, p.species.url) é sempre certo.
+    fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}/`)
       .then(r => r.json())
-      .then(d => {
+      .then(p => {
+        if (!p?.species?.url) throw new Error("sem species url");
+        return fetch(p.species.url).then(r => r.json()).then(d => ({ d, formSlug: p.name }));
+      })
+      .then(({ d, formSlug }) => {
         const en = (d.flavor_text_entries || [])
           .filter(e => e.language.name === "en")
           .map(e => ({ text: e.flavor_text.replace(/\f/g, " "), version: e.version.name }));
-        setEntries(en);
+        setData({
+          entries: en,
+          formSlug,
+          varieties: d.varieties || [],
+          generationName: d.generation?.name || null,
+        });
         setLoading(false);
       })
-      .catch(() => { setEntries([]); setLoading(false); });
+      .catch(() => {
+        setData({ entries: [], formSlug: "", varieties: [], generationName: null });
+        setLoadError(true);
+        setLoading(false);
+      });
   }
 
-  // Versões individuais que correspondem ao jogo/geração selecionado no app
-  const wantedVersions = filterGame && filterGame !== "all"
-    ? (GAME_VERSION_GROUPS[filterGame] || []).flatMap(vg => VERSION_GROUP_TO_VERSIONS[vg] || [])
-    : null;
+  const entries = data?.entries ?? null;
+
+  // Quais formas regionais conhecidas essa ESPÉCIE possui (baseado nas
+  // variantes que a PokeAPI lista pra ela, não na variante que está aberta
+  // agora) — assim o toggle aparece tanto abrindo a forma Kanto quanto a de
+  // Alola, por exemplo.
+  const varieties = data?.varieties ?? [];
+  const regionGroups = Object.keys(REGION_LABEL_BY_SUFFIX)
+    .filter(suffix => varieties.some(v => (v.pokemon?.name || "").includes(suffix)))
+    .map(suffix => ({
+      key: suffix,
+      label: REGION_LABEL_BY_SUFFIX[suffix],
+      versions: REGIONAL_FORM_VERSIONS[suffix],
+    }));
+  const allRegionalVersions = regionGroups.flatMap(g => g.versions);
+  const baseLabel = REGION_BY_GENERATION[data?.generationName] || "Original";
+
+  // Separa as entradas existentes por forma e descarta formas sem nenhuma
+  // entrada disponível (não tem o que mostrar nesse toggle).
+  const versionTabs = (entries && entries.length && regionGroups.length)
+    ? [{ key: "base", label: baseLabel, versions: null }, ...regionGroups]
+      .map(tab => ({
+        ...tab,
+        bucket: tab.versions
+          ? entries.filter(e => tab.versions.includes(e.version))
+          : entries.filter(e => !allRegionalVersions.includes(e.version)),
+      }))
+      .filter(tab => tab.bucket.length > 0)
+    : [];
+
+  // Default do toggle: 1) a forma que está aberta agora, se for regional;
+  // 2) o jogo selecionado no app, se a entrada dele cair em alguma aba;
+  // 3) a primeira aba disponível.
+  function pickDefaultTab() {
+    if (!versionTabs.length) return null;
+    const bySlug = versionTabs.find(t => t.key !== "base" && (data?.formSlug || "").includes(t.key));
+    if (bySlug) return bySlug.key;
+    if (filterGame && filterGame !== "all") {
+      const filterVersions = (GAME_VERSION_GROUPS[filterGame] || []).flatMap(vg => VERSION_GROUP_TO_VERSIONS[vg] || []);
+      const byFilter = versionTabs.find(t => t.bucket.some(e => filterVersions.includes(e.version)));
+      if (byFilter) return byFilter.key;
+    }
+    return versionTabs[0].key;
+  }
+  const activeTabKey = (selectedTab && versionTabs.some(t => t.key === selectedTab))
+    ? selectedTab
+    : pickDefaultTab();
+  const activeTab = versionTabs.find(t => t.key === activeTabKey) || null;
 
   let desc = null;
   let usedFallback = false;
-  if (entries && entries.length) {
+  if (activeTab) {
+    // Espécie com forma regional conhecida — a descrição vem do bucket da
+    // aba ativa, preferindo o jogo selecionado no app quando ele cai nela.
+    const filterVersions = filterGame && filterGame !== "all"
+      ? (GAME_VERSION_GROUPS[filterGame] || []).flatMap(vg => VERSION_GROUP_TO_VERSIONS[vg] || [])
+      : null;
+    const match = filterVersions ? activeTab.bucket.find(e => filterVersions.includes(e.version)) : null;
+    desc = match ? match.text : activeTab.bucket[0].text;
+    usedFallback = !match && !!filterVersions;
+  } else if (entries && entries.length) {
+    // Sem forma regional conhecida pra essa espécie — mantém o comportamento
+    // antigo (filtro pelo jogo selecionado, senão heurística pela forma).
+    const wantedVersions = filterGame && filterGame !== "all"
+      ? (GAME_VERSION_GROUPS[filterGame] || []).flatMap(vg => VERSION_GROUP_TO_VERSIONS[vg] || [])
+      : getRegionalVersions(data?.formSlug);
     const match = wantedVersions ? entries.find(e => wantedVersions.includes(e.version)) : null;
     if (match) desc = match.text;
     else { desc = entries[0].text; usedFallback = !!wantedVersions; }
+  } else if (loadError) {
+    desc = "Erro ao carregar a descrição.";
   } else if (entries) {
     desc = "Sem descrição disponível.";
   }
@@ -623,10 +764,14 @@ function PokedexDesc({ pokemonId, filterGame }) {
         <button
           type="button"
           className="slot-ability-select"
-          style={{ cursor: "pointer", textAlign: "left", width: "100%" }}
+          style={{
+            cursor: "pointer", width: "100%",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}
           onClick={handleToggle}
         >
-          {open ? "Pokedex do pokemon   ▲" : "Pokedex do pokemon   ▼"}
+          <span>Pokedex do pokemon</span>
+          <span>{open ? "▲" : "▼"}</span>
         </button>
       </div>
 
@@ -639,6 +784,28 @@ function PokedexDesc({ pokemonId, filterGame }) {
             <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Carregando...</span>
           ) : (
             <>
+              {versionTabs.length > 1 && (
+                <div
+                  style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {versionTabs.map(t => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setSelectedTab(t.key); }}
+                      style={{
+                        fontSize: 10, fontWeight: "bold", padding: "3px 9px", borderRadius: 999,
+                        border: "1px solid var(--border)", cursor: "pointer",
+                        background: activeTabKey === t.key ? "#8e44ad" : "transparent",
+                        color: activeTabKey === t.key ? "#fff" : "var(--text-muted)",
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <span style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{desc}</span>
               {usedFallback && (
                 <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 6 }}>
@@ -1009,7 +1176,10 @@ function TeamSlot({
                 </div>
 
                 <div style={{ marginTop: 8 }}>
-                  <PokedexDesc pokemonId={pokemon.baseFormId || pokemon.id} filterGame={filterGame} />
+                  <PokedexDesc
+                    pokemonId={pokemon.id}
+                    filterGame={filterGame}
+                  />
                 </div>
 
                 <AbilityDesc abilityName={pokemon.selectedAbility} />

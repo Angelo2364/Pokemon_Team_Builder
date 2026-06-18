@@ -13,6 +13,9 @@ import SavedTeamsScreen from "./components/SavedTeamsScreen";
 // ── Cache global de dados de Pokémon — evita re-fetch ao re-adicionar ────────
 const POKEMON_CACHE = {};
 
+// ── Cache de IDs de Pokémon por tipo — evita re-fetch ao alternar seleção ────
+const TYPE_IDS_CACHE = {};
+
 const PRE_FAIRY_GAMES = new Set([
   "rby",
   "gsc",
@@ -202,6 +205,90 @@ function SearchableDropdown({ placeholder, onSearch, results, onSelect, loading,
   );
 }
 
+function capitalizeType(t) {
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+// ── Filtro de tipo com chips coloridos (suporta múltiplos tipos) ────────────
+function TypeFilterDropdown({ value, onChange, types }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const sortedTypes = useMemo(
+    () => [...types].sort((a, b) => a.localeCompare(b)),
+    [types]
+  );
+
+  const isAll = value.length === 0;
+
+  function toggleType(t) {
+    if (value.includes(t)) onChange(value.filter(v => v !== t));
+    else if (value.length < 2) onChange([...value, t]);
+  }
+
+  let triggerContent;
+  let triggerClass = "type-filter-trigger";
+
+  if (isAll) {
+    triggerContent = (
+      <>
+        <span>Todos os tipos</span>
+        <span className="type-filter-arrow">▾</span>
+      </>
+    );
+  } else if (value.length === 1) {
+    triggerClass += ` type-badge ${value[0]}`;
+    triggerContent = (
+      <>
+        <span>{capitalizeType(value[0])}</span>
+        <span className="type-filter-clear" onClick={e => { e.stopPropagation(); onChange([]); }} title="Limpar filtro de tipo">✕</span>
+      </>
+    );
+  } else {
+    triggerContent = (
+      <>
+        <span className="type-filter-dots">
+          {value.map(t => <span key={t} className={`type-filter-dot ${t}`} />)}
+        </span>
+        <span>{value.length <= 2 ? value.map(capitalizeType).join(" + ") : `${value.length} tipos selecionados`}</span>
+        <span className="type-filter-clear" onClick={e => { e.stopPropagation(); onChange([]); }} title="Limpar filtro de tipo">✕</span>
+      </>
+    );
+  }
+
+  return (
+    <div className="type-filter" ref={ref}>
+      <div className={triggerClass} onClick={() => setOpen(o => !o)}>
+        {triggerContent}
+      </div>
+
+      {open && (
+        <div className="type-filter-panel">
+          {sortedTypes.map(t => {
+            const active = value.includes(t);
+            const disabled = !active && value.length >= 2;
+            return (
+              <div
+                key={t}
+                className={`type-badge type-filter-chip ${t} ${active ? "active" : ""} ${disabled ? "disabled" : ""}`}
+                onClick={() => toggleType(t)}
+              >
+                {capitalizeType(t)}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [started, setStarted] = useState(false);
@@ -219,7 +306,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("all");
+  const [filterType, setFilterType] = useState([]);
   const [filterGame, setFilterGame] = useState("all");
   const [filterGen, setFilterGen] = useState("all");   // filtro de geração independente
   const [filterStage, setFilterStage] = useState("all");
@@ -325,15 +412,29 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (filterType === "all") { setTypeFilteredIds(null); return; }
+    if (filterType.length === 0) { setTypeFilteredIds(null); return; }
     let cancelled = false;
-    fetch(`https://pokeapi.co/api/v2/type/${filterType}`).then(r => r.json()).then(data => {
-      if (cancelled) return;
-      setTypeFilteredIds(new Set(data.pokemon.map(p => {
+
+    async function fetchTypeIds(t) {
+      if (TYPE_IDS_CACHE[t]) return TYPE_IDS_CACHE[t];
+      const r = await fetch(`https://pokeapi.co/api/v2/type/${t}`);
+      const data = await r.json();
+      const ids = new Set(data.pokemon.map(p => {
         const parts = p.pokemon.url.split("/").filter(Boolean);
         return Number(parts[parts.length - 1]);
-      })));
+      }));
+      TYPE_IDS_CACHE[t] = ids;
+      return ids;
+    }
+
+    Promise.all(filterType.map(fetchTypeIds)).then(sets => {
+      if (cancelled) return;
+      // Interseção: o Pokémon precisa ter todos os tipos selecionados
+      const [first, ...rest] = sets;
+      const intersection = new Set([...first].filter(id => rest.every(s => s.has(id))));
+      setTypeFilteredIds(intersection);
     });
+
     return () => { cancelled = true; };
   }, [filterType]);
 
@@ -402,7 +503,7 @@ export default function App() {
   const applySecondaryFilters = useCallback((list) => {
     if (filterGen !== "all") list = list.filter(p => p.genId === Number(filterGen));
     if (search.trim()) list = list.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-    if (filterType !== "all" && typeFilteredIds) list = list.filter(p => typeFilteredIds.has(p.id));
+    if (filterType.length > 0 && typeFilteredIds) list = list.filter(p => typeFilteredIds.has(p.id));
     if (moveFilteredIds) list = list.filter(p => moveFilteredIds.has(p.id));
     if (abilityFilteredIds) list = list.filter(p => abilityFilteredIds.has(p.id));
     if (hideLegendary && legendaryIds) list = list.filter(p => !legendaryIds.has(p.id));
@@ -516,7 +617,7 @@ export default function App() {
   }
   function startGame(id) { setFilterGame(id); setStarted(true); window.scrollTo(0, 0); }
   function clearFilters() {
-    setSearch(""); setFilterType("all"); setFilterGen("all");
+    setSearch(""); setFilterType([]); setFilterGen("all");
     setFilterStage("all"); setHideLegendary(false); setFilterVersion("all");
     setSelectedMove(null); setMoveFilteredIds(null); setMoveSearchResults([]);
     setSelectedAbilityFilter(null); setAbilityFilteredIds(null); setAbilitySearchResults([]);
@@ -797,10 +898,7 @@ export default function App() {
           </select>
 
           {/* Filtro de tipo */}
-          <select value={filterType} onChange={e => setFilterType(e.target.value)}>
-            <option value="all">Todos os tipos</option>
-            {[...ALL_TYPES].sort((a, b) => a.localeCompare(b)).map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-          </select>
+          <TypeFilterDropdown value={filterType} onChange={setFilterType} types={ALL_TYPES} />
 
           {/* Filtro de estágio */}
           <select value={filterStage} onChange={e => setFilterStage(e.target.value)}>
