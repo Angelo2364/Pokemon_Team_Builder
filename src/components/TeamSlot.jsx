@@ -545,6 +545,60 @@ function MovesPanel({ pokemon, index, team, setTeam, filterGame }) {
   );
 }
 
+// ── PokedexDesc — descrição da Pokédex, só busca/renderiza ao clicar ────────
+function PokedexDesc({ pokemonId }) {
+  const [open, setOpen] = useState(false);
+  const [desc, setDesc] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Se o pokemon mudar (troca de slot/forma), fecha e descarta o cache
+  useEffect(() => {
+    setOpen(false);
+    setDesc(null);
+  }, [pokemonId]);
+
+  function handleToggle(e) {
+    e.stopPropagation();
+    if (open) { setOpen(false); return; }
+    setOpen(true);
+    if (desc !== null) return; // já carregado, não busca de novo
+    setLoading(true);
+    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`)
+      .then(r => r.json())
+      .then(d => {
+        const entry = d.flavor_text_entries?.find(e => e.language.name === "en");
+        setDesc(entry?.flavor_text?.replace(/\f/g, " ") || "Sem descrição disponível.");
+        setLoading(false);
+      })
+      .catch(() => { setDesc("Erro ao carregar."); setLoading(false); });
+  }
+
+  return (
+    <div className="slot-ability-wrapper" onClick={e => e.stopPropagation()}>
+      <button
+        type="button"
+        className="slot-ability-select"
+        style={{ cursor: "pointer", textAlign: "left", width: "100%" }}
+        onClick={handleToggle}
+      >
+        {open ? "▲ Pokedex do pokemon" : "▼ Pokedex do pokemon"}
+      </button>
+
+      {open && (
+        <div style={{
+          marginTop: 8, padding: "10px 12px", borderRadius: 10,
+          background: "var(--card2)", border: "1px solid var(--border)",
+        }}>
+          {loading
+            ? <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Carregando...</span>
+            : <span style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{desc}</span>
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── AbilityDesc — seção de descrição de habilidade ──────────────────────────
 function AbilityDesc({ abilityName }) {
   const [desc, setDesc] = useState(null);
@@ -898,6 +952,10 @@ function TeamSlot({
                       );
                     })}
                   </select>
+                </div>
+
+                <div style={{ marginTop: 8 }}>
+                  <PokedexDesc pokemonId={pokemon.baseFormId || pokemon.id} />
                 </div>
 
                 <AbilityDesc abilityName={pokemon.selectedAbility} />
