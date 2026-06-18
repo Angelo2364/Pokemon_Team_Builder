@@ -626,7 +626,7 @@ function PokedexDesc({ pokemonId, filterGame }) {
           style={{ cursor: "pointer", textAlign: "left", width: "100%" }}
           onClick={handleToggle}
         >
-          {open ? "▲ Pokedex do pokemon" : "▼ Pokedex do pokemon"}
+          {open ? "Pokedex do pokemon   ▲" : "Pokedex do pokemon   ▼"}
         </button>
       </div>
 
